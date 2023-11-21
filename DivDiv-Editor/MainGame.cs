@@ -1,26 +1,22 @@
-﻿
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using DivDivEditor.FileAccess;
+using DivDivEditor.GameObjects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.IO;
-using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using Keys = Microsoft.Xna.Framework.Input.Keys;
-using Graphics = Microsoft.Xna.Framework.Graphics;
-using Color = Microsoft.Xna.Framework.Color;
 using ButtonState = Microsoft.Xna.Framework.Input.ButtonState;
-using Vector2 = Microsoft.Xna.Framework.Vector2;
-using Microsoft.VisualBasic.Devices;
-using Mouse = Microsoft.Xna.Framework.Input.Mouse;
+using Color = Microsoft.Xna.Framework.Color;
+using Graphics = Microsoft.Xna.Framework.Graphics;
 using Keyboard = Microsoft.Xna.Framework.Input.Keyboard;
-using System.Windows.Forms;
-using SharpDX;
-using SharpDX.Direct3D9;
+using Keys = Microsoft.Xna.Framework.Input.Keys;
+using Mouse = Microsoft.Xna.Framework.Input.Mouse;
+using Vector2 = Microsoft.Xna.Framework.Vector2;
 
 namespace DivDivEditor
 {
-    public class Game1 : Game
+    public class MainGame : Game
     {
         public bool IAmActive { get; set; }
         private GraphicsDeviceManager _graphics;
@@ -47,19 +43,17 @@ namespace DivDivEditor
         long timer_2 = 0;
         long timer_3 = 0;
         long timer_4 = 0;
+
         // ------Пути к файлам---------
-        String WorldFile;
-        String ObjFile;
-        String DataFile;
-        String Editor = @"editor.dat";
-        String objectsIhfoFile = @"objects.de";
+        string Editor = @"editor.dat";
+        string objectsIhfoFile = @"objects.de";
         //-----------------------------
         readonly GameData GD = new();
         static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264]; //Массив объектов класса ObjectsInfo с описанием объектов
         List<Metaobject> metobj = new();
         List<Button> button = new();
         List<int[]> eggs = new();
-        String[] Text = { "", "", "", "", "", "", "", "", "", "" }; //Массив текста консоли
+        string[] Text = { "", "", "", "", "", "", "", "", "", "" }; //Массив текста консоли
         ushort[] widths; // Разрешение экрана  по ширине  
         ushort[] heights; // Разрешение экрана  по высоте
         Keys[] FunctionKeys = new Keys[] { Keys.F1, Keys.F2, Keys.F3, Keys.F4, Keys.F5, Keys.F6 }; // Клавиши выбора разрешения
@@ -89,8 +83,8 @@ namespace DivDivEditor
         int ScrollWheelOldValue = 0;
         bool movingAnObject = false; //Процесс перемещения объекта
         bool movingAnEgg = false; //Процесс перемещения монстра
-        //====================================================================================================================================================
-        public Game1()
+
+        public MainGame()
         {
             _graphics = new GraphicsDeviceManager(this);
             _graphics.PreferredBackBufferWidth = 1152;
@@ -102,19 +96,16 @@ namespace DivDivEditor
             this.Deactivated += DeactivateMyGame;
             this.IAmActive = false;
         }
-        //====================================================================================================================================================
+
         [STAThread]
         protected override void Initialize()
         {
-            WorldFile = $@"{Settings.GameStartupDirectory}\world.x0";
-            ObjFile = $@"{Settings.GameStartupDirectory}\objects.x0";
-            DataFile = $@"{Settings.GameStartupDirectory}\data.000";
-            GD.Initialize(WorldFile, ObjFile);
-            objectsInfo = ReadAndWriteFile.readObjectsInfo(objectsIhfoFile);
-            eggs = ReadAndWriteFile.ReadEggs(DataFile);
+            GD.Initialize(Settings.WorldFile, Settings.ObjectsFile);
+            objectsInfo = ObjectsIO.ReadObjectsInfo(objectsIhfoFile);
+            eggs = EncountersIO.ReadEggs(Settings.DataFile);
             widths = new ushort[] { 768, 1024, 1152, 1280, 1600, 1920 }; //Массив выбора разрешений экрана
             heights = new ushort[] { 576, 768, 832, 704, 896, 1088 }; //Массив выбора разрешений экрана
-            metobj = ReadAndWriteFile.ReadMetaobject(Editor);
+            metobj = TerrainIO.ReadMetaobject(Editor);
             MenuPointerUp = Content.Load<Texture2D>("images/000022");
             MenuPointerDown = Content.Load<Texture2D>("images/000034");
             MenuLine = Content.Load<Texture2D>("images/000087");
@@ -129,11 +120,11 @@ namespace DivDivEditor
             texturesFrame = Content.Load<Texture2D>("images/textures_frame");
             base.Initialize();
         }
-        //====================================================================================================================================================
+
         [STAThread]
         protected override void LoadContent()
         {
-            _spriteBatch = new Graphics.SpriteBatch(GraphicsDevice);
+            _spriteBatch = new SpriteBatch(GraphicsDevice);
             textBlock = Content.Load<SpriteFont>("text");
             update_tile_and_objects();
             button.Add(new Button(16, Window.ClientBounds.Height - 246, true, MenuPointerDown, "")); // Скрыть консоль
@@ -143,7 +134,7 @@ namespace DivDivEditor
             button.Add(new Button(16, 190, true, MenuObjects, "")); // Объекты
             button.Add(new Button(16, 277, true, MenuMonster, "")); // Монстры
         }
-        //====================================================================================================================================================
+
         [STAThread]
         protected override void Update(GameTime gameTime)
         {
@@ -154,7 +145,7 @@ namespace DivDivEditor
                 base.Update(gameTime);
             }
         }
-        //====================================================================================================================================================
+
         [STAThread]
         protected override void Draw(GameTime gameTime)
         {
@@ -164,26 +155,23 @@ namespace DivDivEditor
             if (showObjects) RenderingObjects();
             if (showEggs) RenderingEggs();
             if (showConsole) ConsoleShow(16, Window.ClientBounds.Height - 246);
-            showMenu();
-            if (showTexturesFrame) showTextures();
+            ShowMenu();
+            if (showTexturesFrame) ShowTextures();
             _spriteBatch.End();
             base.Draw(gameTime);
         }
-        //====================================================================================================================================================
-        //====================================================================================================================================================
-        //====================================================================================================================================================
-        //====================================================================================================================================================
-        //====================================================================================================================================================
-        //====================================================================================================================================================
+
         public void ActivateMyGame(object sendet, EventArgs args)
         {
             IAmActive = true;
         }
+
         public void DeactivateMyGame(object sendet, EventArgs args)
         {
             IAmActive = false;
         }
-        public void KeyboardAndMouseHandler() //Обработчик клавиатуры и мыши
+
+        public void KeyboardAndMouseHandler()
         {
             bool menuSelected = false;
             bool eventHandledAlready = false;
@@ -344,7 +332,7 @@ namespace DivDivEditor
             {
                 int x = xCor + currentMouseState.X / 64;
                 int y = yCor + currentMouseState.Y / 64;
-                if (x >=0 && x < 512 && y >= 0 && y < 1024)
+                if (x >= 0 && x < 512 && y >= 0 && y < 1024)
                 {
                     int[] tile = GD.GetTile(x, y);
                     ConsoleAdd(tile[0].ToString().PadLeft(6, '0') + " " +
@@ -493,7 +481,7 @@ namespace DivDivEditor
                 GD.MovingAnObject(keyboardState.IsKeyDown(Keys.LeftShift), currentMouseState.X, currentMouseState.Y);
             }
             //Перемещение монстра
-            if (!menuSelected && showEggs && movingAnEgg && mouseLBOldState && mouseLBState && selectedEgg >=0)
+            if (!menuSelected && showEggs && movingAnEgg && mouseLBOldState && mouseLBState && selectedEgg >= 0)
             {
                 eggs[selectedEgg][0] = xCor * 64 + currentMouseState.X - cursorOffsetX;
                 eggs[selectedEgg][1] = yCor * 64 + currentMouseState.Y - cursorOffsetY;
@@ -593,17 +581,17 @@ namespace DivDivEditor
             //Читать мир R
             if (keyboardState.IsKeyDown(Keys.R) && Stopwatch.GetTimestamp() - timer_2 > 2500000)
             {
-                GD.Initialize(WorldFile, ObjFile);
-                eggs = ReadAndWriteFile.ReadEggs(DataFile);
+                GD.Initialize(Settings.WorldFile, Settings.ObjectsFile);
+                eggs = EncountersIO.ReadEggs(Settings.DataFile);
                 ConsoleAdd("Read warld and objects");
                 timer_2 = Stopwatch.GetTimestamp();
             }
             //Записать мир T
             if (keyboardState.IsKeyDown(Keys.T) && Stopwatch.GetTimestamp() - timer_2 > 2500000)
             {
-                ReadAndWriteFile.writeObjects_2(ObjFile, GD.GetObjects());
-                ReadAndWriteFile.writeWorld(WorldFile, GD.GetTiles());
-                ReadAndWriteFile.WriteEggs(DataFile, eggs);
+                ObjectsIO.WriteObjects2(Settings.ObjectsFile, GD.Objects);
+                WorldIO.WriteWorld(Settings.WorldFile, GD.Tiles);
+                EncountersIO.WriteEggs(Settings.DataFile, eggs);
                 ConsoleAdd("Save warld and objects");
                 timer_2 = Stopwatch.GetTimestamp();
             }
@@ -631,13 +619,13 @@ namespace DivDivEditor
                 //Form1 F = new Form1();
                 string result = Microsoft.VisualBasic.Interaction.InputBox("2 4 6 8 10 12 20 28 36 64 66 68 72 74 76 80 82 84 88 90 92 94 96 100", "tile", "");
                 int num;
-                Int32.TryParse(result, out num);
+                int.TryParse(result, out num);
                 for (int x = 0; x < 512; x++)
                 {
                     for (int y = 0; y < 1024; y++)
                     {
                         int[] tile = GD.GetTile(x, y);
-                        if  (tile[2] == num && x < 480 && y < 1000)
+                        if (tile[2] == num && x < 480 && y < 1000)
                         {
                             xCor = x;
                             yCor = y;
@@ -645,7 +633,7 @@ namespace DivDivEditor
                         }
                     }
                 }
-                
+
 
                 timer_2 = Stopwatch.GetTimestamp();
             }
@@ -666,8 +654,9 @@ namespace DivDivEditor
             button[0].yCor = Window.ClientBounds.Height - 246; //Обновляем положение кнопки после изменения размера окна
             button[1].yCor = Window.ClientBounds.Height - 30; //Обновляем положение кнопки после изменения размера окна
         }
-        //====================================================================================================================================================
-        public void RenderingTextures()//Выводим текстуры плитки
+
+        //Выводим текстуры плитки
+        public void RenderingTextures()
         {
             for (int i = 0; i < Window.ClientBounds.Width / 64; i++)
             {
@@ -711,7 +700,9 @@ namespace DivDivEditor
                 }
             }
         }
-        public void RenderingObjects()// Выводим объекты
+
+        // Выводим объекты
+        public void RenderingObjects()
         {
             for (int i = 0; i < GD.GetObjectCount(); i++)
             {
@@ -719,13 +710,15 @@ namespace DivDivEditor
                 else _spriteBatch.Draw(Content.Load<Texture2D>(GD.GetObjectPath(i)), GD.GetObjectPosition(i), Color.White);
             }
         }
-        public void RenderingEggs()//Выводим точки спавна
+
+        //Выводим точки спавна
+        public void RenderingEggs()
         {
             for (int i = 0; i < eggs.Count; i++)
             {
                 if ((".x" + eggs[i][14].ToString()) == Settings.GameFilesExtension)
                 {
-                    if (eggs[i][0] > xCor*64 && eggs[i][0] < (xCor * 64 + Window.ClientBounds.Width) && eggs[i][1] > yCor * 64 && eggs[i][1] < (yCor * 64 + Window.ClientBounds.Height))
+                    if (eggs[i][0] > xCor * 64 && eggs[i][0] < (xCor * 64 + Window.ClientBounds.Width) && eggs[i][1] > yCor * 64 && eggs[i][1] < (yCor * 64 + Window.ClientBounds.Height))
                     {
                         if (i == selectedEgg)
                         {
@@ -743,24 +736,23 @@ namespace DivDivEditor
                 }
             }
         }
-        //====================================================================================================================================================
+
         // Выводим предпросмотр текстур с рамкой
-        public void showTextures() 
+        public void ShowTextures()
         {
-            String[] tex = GD.GetTexturePalette(textures);
+            string[] tex = GD.GetTexturePalette(textures);
             exampleTexture_0 = Content.Load<Texture2D>(tex[0]);
             exampleTexture_1 = Content.Load<Texture2D>(tex[1]);
             exampleTexture_2 = Content.Load<Texture2D>(tex[2]);
             exampleTexture_3 = Content.Load<Texture2D>(tex[3]);
-            _spriteBatch.Draw(exampleTexture_0, new Vector2(103,16 ), Color.White);
+            _spriteBatch.Draw(exampleTexture_0, new Vector2(103, 16), Color.White);
             _spriteBatch.Draw(exampleTexture_1, new Vector2(167, 16), Color.White);
             _spriteBatch.Draw(exampleTexture_2, new Vector2(103, 80), Color.White);
             _spriteBatch.Draw(exampleTexture_3, new Vector2(167, 80), Color.White);
             _spriteBatch.Draw(texturesFrame, new Vector2(103, 16), Color.White);
         }
-        //====================================================================================================================================================
-        // Выводим меню
-        public void showMenu()
+
+        public void ShowMenu()
         {
             for (int i = 0; i < Button.TotalCount(); i++)
             {
@@ -779,9 +771,9 @@ namespace DivDivEditor
                 }
             }
         }
-        //====================================================================================================================================================
+
         // Добавить строку в консоль
-        public void ConsoleAdd(String t)
+        public void ConsoleAdd(string t)
         {
             for (int i = 9; i > 0; i--)
             {
@@ -789,7 +781,7 @@ namespace DivDivEditor
             }
             Text[0] = t;
         }
-        // Очистить консоль
+
         public void ConsoleClear()
         {
             for (int i = 0; i < 10; i++)
@@ -797,16 +789,16 @@ namespace DivDivEditor
                 Text[i] = "";
             }
         }
-        // Вывести консоль
+
         public void ConsoleShow(int x, int y)
         {
             _spriteBatch.Draw(ConsoleBack, new Vector2(x, y), Color.White);
-            for(int i = 0; i < 10;i++)
+            for (int i = 0; i < 10; i++)
             {
-                if (Text[9 - i] != null) _spriteBatch.DrawString(textBlock, Text[9-i], new Vector2(x + 50 , y + 20 + 18 * i), Color.SlateGray);
+                if (Text[9 - i] != null) _spriteBatch.DrawString(textBlock, Text[9 - i], new Vector2(x + 50, y + 20 + 18 * i), Color.SlateGray);
             }
         }
-        //====================================================================================================================================================
+
         public void update_tile_and_objects()// Обновляем отображаемые плитки и объекты
         {
             for (int i = 0; i < Window.ClientBounds.Width / 64; i++)
@@ -819,7 +811,7 @@ namespace DivDivEditor
             }
             GD.UpdateDisplayedObjects(xCor, yCor, Window.ClientBounds.Width, Window.ClientBounds.Height, movingAnObject);
         }
-        //====================================================================================================================================================
+
         public Color[,] getColorArray(int objNum)
         {
             int objName = GD.GetObjectName(objNum);
@@ -836,19 +828,19 @@ namespace DivDivEditor
             }
             return colors2D;
         }
-        //====================================================================================================================================================
+
         public bool checkCursorInSprite(int[] obj, int x, int y)
         {
-            if (x > obj[4] && 
-                x < obj[4] + objectsInfo[obj[0]].width && 
-                y > obj[5] - obj[6] && 
+            if (x > obj[4] &&
+                x < obj[4] + objectsInfo[obj[0]].width &&
+                y > obj[5] - obj[6] &&
                 y < obj[5] + objectsInfo[obj[0]].height - obj[6])
             {
                 return true;
             }
             else return false;
         }
-        //====================================================================================================================================================
+
         void ChangeResolution(byte newResolution)// Устанавливаем разрешение экрана
         {
             if (newResolution >= 0 && newResolution < widths.Length)
@@ -859,15 +851,15 @@ namespace DivDivEditor
                 System.Diagnostics.Debug.WriteLine("New resolution: {0} x {1}", _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
             }
         }
-        //====================================================================================================================================================
     }
+
     public class Button
     {
         public int xCor, yCor, height, width;
         public bool visibility;
         public bool selected;
         public Texture2D texture;
-        public String text;
+        public string text;
         static int count = 0;
         public Button(int x, int y, bool vis, Texture2D tex, string text)
         {
@@ -894,16 +886,4 @@ namespace DivDivEditor
             else return false;
         }
     }
-    public class Form1 : Form
-    {
-        public Form1() { }
-
-    }
 }
-//System.Diagnostics.Debug.WriteLine(line);
-
-//Form texturesForm = new Form();
-//texturesForm.SetBounds(600, 300, 500, 500);
-//System.Windows.Forms.TextBox t = new System.Windows.Forms.TextBox();
-//texturesForm.Controls.Add(t);
-//texturesForm.ShowDialog();

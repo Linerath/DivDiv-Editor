@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace DivDivEditor
 {
-    internal class Metaobject
+    public class Metaobject
     {
         /*
          * startdef metaobject WALL small_wall_i_05
@@ -20,11 +16,11 @@ namespace DivDivEditor
          * object 322 right X center 85 on 0
          * 
          * */
-        public String metaobject;
-        public String group;
-        public String location;
-        public String type;
-        public String walltype;
+        public string metaobject;
+        public string group;
+        public string location;
+        public string type;
+        public string walltype;
         public int placement;
         public int[] size = new int[2];
         //public List<int>[] Object = new List<int>[4];
@@ -34,27 +30,27 @@ namespace DivDivEditor
         {
             count++;
         }
-        public void setMet(String met)
+        public void setMet(string met)
         {
             this.metaobject = met;
         }
-        public void setGroup(String grp)
+        public void setGroup(string grp)
         {
             this.group = grp;
         }
-        public void setLocation(String loc)
+        public void setLocation(string loc)
         {
             this.location = loc;
         }
-        public void setPlacement(int plac) 
-        { 
+        public void setPlacement(int plac)
+        {
             this.placement = plac;
         }
-        public void setType(String type)
+        public void setType(string type)
         {
             this.type = type;
         }
-        public void setWalltype(String wtype)
+        public void setWalltype(string wtype)
         {
             this.walltype = wtype;
         }

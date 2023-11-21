@@ -1,3 +1,2 @@
-﻿
-using var game = new DivDivEditor.Game1();
+﻿using var game = new DivDivEditor.MainGame();
 game.Run();

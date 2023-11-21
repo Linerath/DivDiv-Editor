@@ -48,12 +48,8 @@ namespace DivDivEditor
         long timer_3 = 0;
         long timer_4 = 0;
         // ------Пути к файлам---------
-        String config = @"config.ini";
-        String mainDirect;
-        String savegameDirect;
-        String fileExtension;
-        String WorldFile = "F:\\SteamLibrary\\steamapps\\common\\divine_divinity\\savegames\\test_1\\world.x0";
-        String ObjFile = "F:\\SteamLibrary\\steamapps\\common\\divine_divinity\\savegames\\test_1\\objects.x0";
+        String WorldFile;
+        String ObjFile;
         String DataFile;
         String Editor = @"editor.dat";
         String objectsIhfoFile = @"objects.de";
@@ -110,21 +106,9 @@ namespace DivDivEditor
         [STAThread]
         protected override void Initialize()
         {
-            bool configExist = File.Exists(config);
-            if (configExist)
-            {
-                string[] lines = File.ReadAllLines(config);
-                foreach (string s in lines)
-                {
-                    mainDirect = lines[1];
-                    savegameDirect = lines[3];
-                    fileExtension = lines[5];
-                }
-            }
-            else Exit();
-            WorldFile = savegameDirect + "\\world" + fileExtension;
-            ObjFile = savegameDirect + "\\objects" + fileExtension;
-            DataFile = savegameDirect + "\\data.000";
+            WorldFile = $@"{Settings.GameStartupDirectory}\world.x0";
+            ObjFile = $@"{Settings.GameStartupDirectory}\objects.x0";
+            DataFile = $@"{Settings.GameStartupDirectory}\data.000";
             GD.Initialize(WorldFile, ObjFile);
             objectsInfo = ReadAndWriteFile.readObjectsInfo(objectsIhfoFile);
             eggs = ReadAndWriteFile.ReadEggs(DataFile);
@@ -739,7 +723,7 @@ namespace DivDivEditor
         {
             for (int i = 0; i < eggs.Count; i++)
             {
-                if ((".x" + eggs[i][14].ToString()) == fileExtension)
+                if ((".x" + eggs[i][14].ToString()) == Settings.GameFilesExtension)
                 {
                     if (eggs[i][0] > xCor*64 && eggs[i][0] < (xCor * 64 + Window.ClientBounds.Width) && eggs[i][1] > yCor * 64 && eggs[i][1] < (yCor * 64 + Window.ClientBounds.Height))
                     {

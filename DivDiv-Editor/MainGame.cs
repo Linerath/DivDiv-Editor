@@ -52,22 +52,21 @@ namespace DivDivEditor
         static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264]; //Массив объектов класса ObjectsInfo с описанием объектов
         List<Metaobject> metobj = new();
         List<Button> button = new();
-        List<int[]> eggs = new();
+        List<int[]> encounters = new();
         string[] Text = { "", "", "", "", "", "", "", "", "", "" }; //Массив текста консоли
         ushort[] widths; // Разрешение экрана  по ширине  
         ushort[] heights; // Разрешение экрана  по высоте
         Keys[] FunctionKeys = new Keys[] { Keys.F1, Keys.F2, Keys.F3, Keys.F4, Keys.F5, Keys.F6 }; // Клавиши выбора разрешения
         int xCor = 0; //Координата экрана
         int yCor = 0; //Координата экрана
-        bool showObjects = true; //Показать объекты
         bool showConsole = true;
         bool showTexturesFrame = false;
         bool showTileEffect = false;
-        bool showEggs = false;
+        bool showEncounters = false;
         bool objectWork = false;
         bool textureWork = false;
-        int selectedObject = -1; //Выбранный объект
-        int selectedEgg = -1; //Выбранный монстр
+        int selectedObject = -1;
+        int selectedEncounter = -1;
         int textures = 0; //Выбранная текстура
         int obj = 0;
         //-----------------------------
@@ -82,19 +81,21 @@ namespace DivDivEditor
         int mouseYCorOld = 0;
         int ScrollWheelOldValue = 0;
         bool movingAnObject = false; //Процесс перемещения объекта
-        bool movingAnEgg = false; //Процесс перемещения монстра
+        bool movingAnEncounter = false; //Процесс перемещения монстра
 
         public MainGame()
         {
-            _graphics = new GraphicsDeviceManager(this);
-            _graphics.PreferredBackBufferWidth = 1152;
-            _graphics.PreferredBackBufferHeight = 832;
+            _graphics = new GraphicsDeviceManager(this)
+            {
+                PreferredBackBufferWidth = 1152,
+                PreferredBackBufferHeight = 832
+            };
             _graphics.ApplyChanges();
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
-            this.Activated += ActivateMyGame;
-            this.Deactivated += DeactivateMyGame;
-            this.IAmActive = false;
+            Activated += ActivateMyGame;
+            Deactivated += DeactivateMyGame;
+            IAmActive = false;
         }
 
         [STAThread]
@@ -102,7 +103,7 @@ namespace DivDivEditor
         {
             GD.Initialize(Settings.WorldFile, Settings.ObjectsFile);
             objectsInfo = ObjectsIO.ReadObjectsInfo(objectsIhfoFile);
-            eggs = EncountersIO.ReadEggs(Settings.DataFile);
+            encounters = EncountersIO.ReadEncounters(Settings.DataFile);
             widths = new ushort[] { 768, 1024, 1152, 1280, 1600, 1920 }; //Массив выбора разрешений экрана
             heights = new ushort[] { 576, 768, 832, 704, 896, 1088 }; //Массив выбора разрешений экрана
             metobj = TerrainIO.ReadMetaobject(Editor);
@@ -118,6 +119,7 @@ namespace DivDivEditor
             point = Content.Load<Texture2D>("images/point");
             monster = Content.Load<Texture2D>("images/monster");
             texturesFrame = Content.Load<Texture2D>("images/textures_frame");
+
             base.Initialize();
         }
 
@@ -127,6 +129,7 @@ namespace DivDivEditor
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             textBlock = Content.Load<SpriteFont>("text");
             update_tile_and_objects();
+
             button.Add(new Button(16, Window.ClientBounds.Height - 246, true, MenuPointerDown, "")); // Скрыть консоль
             button.Add(new Button(16, Window.ClientBounds.Height - 30, false, MenuPointerUp, "")); // Показать консоль
             button.Add(new Button(16, 16, true, Menu, "")); // Меню
@@ -151,13 +154,26 @@ namespace DivDivEditor
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin();
-            RenderingTextures();
-            if (showObjects) RenderingObjects();
-            if (showEggs) RenderingEggs();
-            if (showConsole) ConsoleShow(16, Window.ClientBounds.Height - 246);
-            ShowMenu();
-            if (showTexturesFrame) ShowTextures();
+
+            RenderTextures();
+
+            if (Settings.ShowObjects)
+                RenderObjects();
+
+            if (Settings.ShowEncounters)
+                RenderEncounters();
+
+            if (Settings.ShowConsole)
+                ConsoleShow(16, Window.ClientBounds.Height - 246);
+
+            if (Settings.ShowMenu)
+                ShowMenu();
+
+            if (showTexturesFrame)
+                ShowTextures();
+
             _spriteBatch.End();
+
             base.Draw(gameTime);
         }
 
@@ -231,7 +247,7 @@ namespace DivDivEditor
                 {
                     objectWork = false;
                     textureWork = !textureWork;
-                    showEggs = false;
+                    showEncounters = false;
                     button[5].selected = false;
                     button[3].selected = textureWork;
                     button[4].selected = false;
@@ -248,7 +264,7 @@ namespace DivDivEditor
                 {
                     objectWork = !objectWork;
                     textureWork = false;
-                    showEggs = false;
+                    showEncounters = false;
                     button[5].selected = false;
                     button[4].selected = objectWork;
                     button[3].selected = false;
@@ -263,10 +279,10 @@ namespace DivDivEditor
             {
                 if (Stopwatch.GetTimestamp() - timer_3 > 3000000)
                 {
-                    showEggs = !showEggs;
+                    showEncounters = !showEncounters;
                     objectWork = false;
                     textureWork = false;
-                    button[5].selected = showEggs;
+                    button[5].selected = showEncounters;
                     button[4].selected = false;
                     button[3].selected = false;
                     button[2].selected = false;
@@ -278,7 +294,7 @@ namespace DivDivEditor
                 menuSelected = true;
             }
             //Редактировать плитку ПКМ
-            if (mouseRBState && showTexturesFrame && !objectWork && !showEggs && Stopwatch.GetTimestamp() - timer_4 > 2000000)
+            if (mouseRBState && showTexturesFrame && !objectWork && !showEncounters && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
                 int x = xCor + currentMouseState.X / 64;
                 int y = yCor + currentMouseState.Y / 64;
@@ -305,7 +321,7 @@ namespace DivDivEditor
                 timer_4 = Stopwatch.GetTimestamp();
             }
             //Редактировать объект ПКМ
-            if (selectedObject >= 0 && mouseRBState && !showTexturesFrame && objectWork && !showEggs && Stopwatch.GetTimestamp() - timer_4 > 2000000)
+            if (selectedObject >= 0 && mouseRBState && !showTexturesFrame && objectWork && !showEncounters && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
                 int[] obj2 = GD.GetObjectInFrame(selectedObject);
                 int[] obj = GD.GetObject(obj2[8]);
@@ -328,7 +344,7 @@ namespace DivDivEditor
                 timer_4 = Stopwatch.GetTimestamp();
             }
             //Инфо о плитке
-            if (mouseLBState && !showTexturesFrame && !objectWork && !showEggs && Stopwatch.GetTimestamp() - timer_4 > 2000000)
+            if (mouseLBState && !showTexturesFrame && !objectWork && !showEncounters && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
                 int x = xCor + currentMouseState.X / 64;
                 int y = yCor + currentMouseState.Y / 64;
@@ -381,7 +397,7 @@ namespace DivDivEditor
                 timer_4 = Stopwatch.GetTimestamp();
             }
             //Выбор монстра
-            if (!menuSelected && showEggs && mouseLBState && mouseLBOldState == false && !eventHandledAlready && Stopwatch.GetTimestamp() - timer_4 > 2000000)
+            if (!menuSelected && showEncounters && mouseLBState && mouseLBOldState == false && !eventHandledAlready && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
                 int x = currentMouseState.X + 30;
                 int y = currentMouseState.Y + 32;
@@ -390,11 +406,11 @@ namespace DivDivEditor
                 Color[] ColorArray = new Color[Xsize * Ysize];
                 monster.GetData(ColorArray);
                 Color[,] colors2D = new Color[Xsize, Ysize];
-                for (int i = eggs.Count - 1; i >= 0; i--)
+                for (int i = encounters.Count - 1; i >= 0; i--)
                 {
-                    int eggsXCor = eggs[i][0] - xCor * 64;
-                    int eggsYCor = eggs[i][1] - yCor * 64;
-                    if (x > eggsXCor && x < eggsXCor + Xsize && y > eggsYCor && y < eggsYCor + Ysize)
+                    int encountersXCor = encounters[i][0] - xCor * 64;
+                    int encountersYCor = encounters[i][1] - yCor * 64;
+                    if (x > encountersXCor && x < encountersXCor + Xsize && y > encountersYCor && y < encountersYCor + Ysize)
                     {
                         for (int r = 0; r < Xsize; r++)
                         {
@@ -403,13 +419,13 @@ namespace DivDivEditor
                                 colors2D[r, t] = ColorArray[r + t * Xsize];
                             }
                         }
-                        if (colors2D[x - eggsXCor, y - eggsYCor].A != 0)
+                        if (colors2D[x - encountersXCor, y - encountersYCor].A != 0)
                         {
-                            selectedEgg = i;
+                            selectedEncounter = i;
                             break;
                         }
                     }
-                    selectedEgg = -1;
+                    selectedEncounter = -1;
                     ConsoleClear();
                 }
                 timer_4 = Stopwatch.GetTimestamp();
@@ -420,12 +436,12 @@ namespace DivDivEditor
                 selectedObject = GD.ObjectDel(selectedObject);
             }
             //Удаление монстра
-            if (!menuSelected && selectedEgg >= 0 && keyboardState.IsKeyDown(Keys.Delete))
+            if (!menuSelected && selectedEncounter >= 0 && keyboardState.IsKeyDown(Keys.Delete))
             {
-                eggs.RemoveRange(selectedEgg, 1);
+                encounters.RemoveRange(selectedEncounter, 1);
                 ConsoleClear();
-                ConsoleAdd("Egg " + selectedEgg + " delete");
-                selectedEgg = -1;
+                ConsoleAdd("Encounter " + selectedEncounter + " delete");
+                selectedEncounter = -1;
             }
             //Начало перемещения объекта
             if (!menuSelected && selectedObject >= 0 && mouseLBOldState && !movingAnObject && Stopwatch.GetTimestamp() - timer_4 > 1500000)
@@ -440,36 +456,36 @@ namespace DivDivEditor
                 timer_4 = Stopwatch.GetTimestamp();
             }
             //Начало перемещения монстра
-            if (!menuSelected && showEggs && selectedEgg >= 0 && mouseLBOldState && !movingAnEgg && Stopwatch.GetTimestamp() - timer_4 > 1500000)
+            if (!menuSelected && showEncounters && selectedEncounter >= 0 && mouseLBOldState && !movingAnEncounter && Stopwatch.GetTimestamp() - timer_4 > 1500000)
             {
                 int x1 = currentMouseState.X + 30;
                 int y1 = currentMouseState.Y + 32;
                 int Xsize = 59;
                 int Ysize = 64;
                 //Если курсор в области выделенного объекта
-                int eggsXCor = eggs[selectedEgg][0] - xCor * 64;
-                int eggsYCor = eggs[selectedEgg][1] - yCor * 64;
-                if (x1 > eggsXCor && x1 < eggsXCor + Xsize && y1 > eggsYCor && y1 < eggsYCor + Ysize)
+                int encountersXCor = encounters[selectedEncounter][0] - xCor * 64;
+                int encountersYCor = encounters[selectedEncounter][1] - yCor * 64;
+                if (x1 > encountersXCor && x1 < encountersXCor + Xsize && y1 > encountersYCor && y1 < encountersYCor + Ysize)
                 {
                     if (keyboardState.IsKeyDown(Keys.LeftControl))
                     {
-                        eggs.Add(new int[15]);
+                        encounters.Add(new int[15]);
                         for (int k = 0; k < 15; k++)
                         {
-                            eggs[eggs.Count - 1][k] = eggs[selectedEgg][k];
+                            encounters[encounters.Count - 1][k] = encounters[selectedEncounter][k];
                         }
-                        eggs[eggs.Count - 1][12] = eggs.Count - 1;
-                        selectedEgg = eggs.Count - 1;
+                        encounters[encounters.Count - 1][12] = encounters.Count - 1;
+                        selectedEncounter = encounters.Count - 1;
                     }
-                    cursorOffsetX = currentMouseState.X - eggsXCor;
-                    cursorOffsetY = currentMouseState.Y - eggsYCor;
+                    cursorOffsetX = currentMouseState.X - encountersXCor;
+                    cursorOffsetY = currentMouseState.Y - encountersYCor;
 
-                    movingAnEgg = true;
+                    movingAnEncounter = true;
                 }
                 else
                 {
-                    movingAnEgg = false;
-                    selectedEgg = -1;
+                    movingAnEncounter = false;
+                    selectedEncounter = -1;
                     cursorOffsetX = 0;
                     cursorOffsetY = 0;
                 }
@@ -481,15 +497,15 @@ namespace DivDivEditor
                 GD.MovingAnObject(keyboardState.IsKeyDown(Keys.LeftShift), currentMouseState.X, currentMouseState.Y);
             }
             //Перемещение монстра
-            if (!menuSelected && showEggs && movingAnEgg && mouseLBOldState && mouseLBState && selectedEgg >= 0)
+            if (!menuSelected && showEncounters && movingAnEncounter && mouseLBOldState && mouseLBState && selectedEncounter >= 0)
             {
-                eggs[selectedEgg][0] = xCor * 64 + currentMouseState.X - cursorOffsetX;
-                eggs[selectedEgg][1] = yCor * 64 + currentMouseState.Y - cursorOffsetY;
+                encounters[selectedEncounter][0] = xCor * 64 + currentMouseState.X - cursorOffsetX;
+                encounters[selectedEncounter][1] = yCor * 64 + currentMouseState.Y - cursorOffsetY;
             }
             //Конец перемещения монстра
-            if (!menuSelected && showEggs && movingAnEgg && mouseLBOldState && !mouseLBState)
+            if (!menuSelected && showEncounters && movingAnEncounter && mouseLBOldState && !mouseLBState)
             {
-                movingAnEgg = false;
+                movingAnEncounter = false;
             }
             //Вставка объекта после перемещения
             if (!menuSelected && movingAnObject && mouseLBOldState && !mouseLBState)
@@ -582,7 +598,7 @@ namespace DivDivEditor
             if (keyboardState.IsKeyDown(Keys.R) && Stopwatch.GetTimestamp() - timer_2 > 2500000)
             {
                 GD.Initialize(Settings.WorldFile, Settings.ObjectsFile);
-                eggs = EncountersIO.ReadEggs(Settings.DataFile);
+                encounters = EncountersIO.ReadEncounters(Settings.DataFile);
                 ConsoleAdd("Read warld and objects");
                 timer_2 = Stopwatch.GetTimestamp();
             }
@@ -591,7 +607,7 @@ namespace DivDivEditor
             {
                 ObjectsIO.WriteObjects2(Settings.ObjectsFile, GD.Objects);
                 WorldIO.WriteWorld(Settings.WorldFile, GD.Tiles);
-                EncountersIO.WriteEggs(Settings.DataFile, eggs);
+                EncountersIO.WriteEncounters(Settings.DataFile, encounters);
                 ConsoleAdd("Save warld and objects");
                 timer_2 = Stopwatch.GetTimestamp();
             }
@@ -620,6 +636,7 @@ namespace DivDivEditor
                 string result = Microsoft.VisualBasic.Interaction.InputBox("2 4 6 8 10 12 20 28 36 64 66 68 72 74 76 80 82 84 88 90 92 94 96 100", "tile", "");
                 int num;
                 int.TryParse(result, out num);
+
                 for (int x = 0; x < 512; x++)
                 {
                     for (int y = 0; y < 1024; y++)
@@ -643,11 +660,20 @@ namespace DivDivEditor
                 showTileEffect = !showTileEffect;
                 timer_2 = Stopwatch.GetTimestamp();
             }
-            if (currentMouseState.LeftButton == ButtonState.Pressed) mouseLBOldState = true;
-            else mouseLBOldState = false;
-            if (currentMouseState.RightButton == ButtonState.Pressed) mouseRBOldState = true;
-            else mouseRBOldState = false;
-            if (currentMouseState.LeftButton == ButtonState.Released) movingAnObject = false;
+
+            if (currentMouseState.LeftButton == ButtonState.Pressed)
+                mouseLBOldState = true;
+            else
+                mouseLBOldState = false;
+
+            if (currentMouseState.RightButton == ButtonState.Pressed)
+                mouseRBOldState = true;
+            else
+                mouseRBOldState = false;
+
+            if (currentMouseState.LeftButton == ButtonState.Released)
+                movingAnObject = false;
+
             mouseXCorOld = currentMouseState.X;
             mouseYCorOld = currentMouseState.Y;
             ScrollWheelOldValue = currentMouseState.ScrollWheelValue;
@@ -656,7 +682,7 @@ namespace DivDivEditor
         }
 
         //Выводим текстуры плитки
-        public void RenderingTextures()
+        public void RenderTextures()
         {
             for (int i = 0; i < Window.ClientBounds.Width / 64; i++)
             {
@@ -702,7 +728,7 @@ namespace DivDivEditor
         }
 
         // Выводим объекты
-        public void RenderingObjects()
+        public void RenderObjects()
         {
             for (int i = 0; i < GD.GetObjectCount(); i++)
             {
@@ -712,25 +738,25 @@ namespace DivDivEditor
         }
 
         //Выводим точки спавна
-        public void RenderingEggs()
+        public void RenderEncounters()
         {
-            for (int i = 0; i < eggs.Count; i++)
+            for (int i = 0; i < encounters.Count; i++)
             {
-                if ((".x" + eggs[i][14].ToString()) == Settings.GameFilesExtension)
+                if ((".x" + encounters[i][14].ToString()) == Settings.GameFilesExtension)
                 {
-                    if (eggs[i][0] > xCor * 64 && eggs[i][0] < (xCor * 64 + Window.ClientBounds.Width) && eggs[i][1] > yCor * 64 && eggs[i][1] < (yCor * 64 + Window.ClientBounds.Height))
+                    if (encounters[i][0] > xCor * 64 && encounters[i][0] < (xCor * 64 + Window.ClientBounds.Width) && encounters[i][1] > yCor * 64 && encounters[i][1] < (yCor * 64 + Window.ClientBounds.Height))
                     {
-                        if (i == selectedEgg)
+                        if (i == selectedEncounter)
                         {
-                            _spriteBatch.Draw(monster, new Vector2(eggs[i][0] - 30 - xCor * 64, eggs[i][1] - 32 - yCor * 64), Color.Red);
-                            _spriteBatch.DrawString(textBlock, eggs[i][2].ToString(), new Vector2(eggs[i][0] - xCor * 64, eggs[i][1] - yCor * 64), Color.White);
-                            _spriteBatch.DrawString(textBlock, eggs[i][12].ToString(), new Vector2(eggs[i][0] - xCor * 64, eggs[i][1] + 30 - yCor * 64), Color.White);
+                            _spriteBatch.Draw(monster, new Vector2(encounters[i][0] - 30 - xCor * 64, encounters[i][1] - 32 - yCor * 64), Color.Red);
+                            _spriteBatch.DrawString(textBlock, encounters[i][2].ToString(), new Vector2(encounters[i][0] - xCor * 64, encounters[i][1] - yCor * 64), Color.White);
+                            _spriteBatch.DrawString(textBlock, encounters[i][12].ToString(), new Vector2(encounters[i][0] - xCor * 64, encounters[i][1] + 30 - yCor * 64), Color.White);
                         }
                         else
                         {
-                            _spriteBatch.Draw(monster, new Vector2(eggs[i][0] - 30 - xCor * 64, eggs[i][1] - 32 - yCor * 64), Color.Yellow);
-                            _spriteBatch.DrawString(textBlock, eggs[i][2].ToString(), new Vector2(eggs[i][0] - xCor * 64, eggs[i][1] - yCor * 64), Color.White);
-                            _spriteBatch.DrawString(textBlock, eggs[i][12].ToString(), new Vector2(eggs[i][0] - xCor * 64, eggs[i][1] + 30 - yCor * 64), Color.White);
+                            _spriteBatch.Draw(monster, new Vector2(encounters[i][0] - 30 - xCor * 64, encounters[i][1] - 32 - yCor * 64), Color.Yellow);
+                            _spriteBatch.DrawString(textBlock, encounters[i][2].ToString(), new Vector2(encounters[i][0] - xCor * 64, encounters[i][1] - yCor * 64), Color.White);
+                            _spriteBatch.DrawString(textBlock, encounters[i][12].ToString(), new Vector2(encounters[i][0] - xCor * 64, encounters[i][1] + 30 - yCor * 64), Color.White);
                         }
                     }
                 }
@@ -754,7 +780,7 @@ namespace DivDivEditor
 
         public void ShowMenu()
         {
-            for (int i = 0; i < Button.TotalCount(); i++)
+            for (int i = 0; i < Button.Count; i++)
             {
                 if (button[i].visibility)
                 {
@@ -809,7 +835,9 @@ namespace DivDivEditor
                     TilesGreedHalf[i, j] = Content.Load<Texture2D>(GD.GetHalfTileTexturesName(i + xCor, j + yCor));
                 }
             }
-            GD.UpdateDisplayedObjects(xCor, yCor, Window.ClientBounds.Width, Window.ClientBounds.Height, movingAnObject);
+
+            if (Settings.ShowObjects)
+                GD.UpdateDisplayedObjects(xCor, yCor, Window.ClientBounds.Width, Window.ClientBounds.Height, movingAnObject);
         }
 
         public Color[,] getColorArray(int objNum)
@@ -860,23 +888,22 @@ namespace DivDivEditor
         public bool selected;
         public Texture2D texture;
         public string text;
-        static int count = 0;
+
+        public static int Count = 0;
+
         public Button(int x, int y, bool vis, Texture2D tex, string text)
         {
-            count++;
-            this.xCor = x;
-            this.yCor = y;
-            this.visibility = vis;
-            this.texture = tex;
-            this.height = texture.Height;
-            this.width = texture.Width;
+            Count++;
+            xCor = x;
+            yCor = y;
+            visibility = vis;
+            texture = tex;
+            height = texture.Height;
+            width = texture.Width;
             this.text = text;
-            this.selected = false;
+            selected = false;
         }
-        public static int TotalCount()
-        {
-            return count;
-        }
+
         public bool Click(int x, int y, bool click)
         {
             if (x > xCor && x < (xCor + width) && y > yCor && y < (yCor + height) && click)

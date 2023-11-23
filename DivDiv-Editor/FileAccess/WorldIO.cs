@@ -1,13 +1,14 @@
 ﻿using System;
 using System.IO;
+using DivDivEditor.GameObjects;
 
 namespace DivDivEditor.FileAccess
 {
     public static class WorldIO
     {
-        public static void WriteWorld(string inpFile, int[,,] outArray)
+        public static void WriteWorld(string inputFile, int[,,] outArray)
         {
-            using BinaryWriter writer = new(File.Open(inpFile, FileMode.Create));
+            using BinaryWriter writer = new(File.Open(inputFile, FileMode.Create));
 
             int bufStart = 4096;
             writer.Write(4096);
@@ -73,45 +74,56 @@ namespace DivDivEditor.FileAccess
             writer.Write(103);
         }
 
-        public static int[,,] ReadWorld(string inpFile)
+        public static int[,,] ReadWorld(string inputFile)
         {
             int[,,] tileArray = new int[Vars.WorldHeight, Vars.WorldWidth, 96];
-            byte[] tile = new byte[9];
-            byte[] object_ = new byte[8];
-            int XY, buf1;
 
-            if (File.Exists(inpFile))
+            if (File.Exists(inputFile))
             {
-                using BinaryReader world = new(File.Open(inpFile, FileMode.Open));
+                using BinaryReader world = new(File.Open(inputFile, FileMode.Open));
 
                 var globalHash = world.ReadBytes(Vars.GlobalHashBytes);
 
-                for (int y = 0; y < Vars.WorldHeight; y++)
+                for (int tileY = 0; tileY < Vars.WorldHeight; tileY++)
                 {
                     var rowHash = world.ReadBytes(Vars.RowHashBytes);
 
-                    for (int x = 0; x < Vars.WorldWidth; x++)
+                    for (int tileX = 0; tileX < Vars.WorldWidth; tileX++)
                     {
-                        tileArray[y, x, 0] = world.ReadUInt16(); //Полные текстуры
-                        tileArray[y, x, 1] = world.ReadUInt16(); //Половинчатые текстуры
-                        buf1 = world.ReadUInt16();
-                        tileArray[y, x, 5] = world.ReadByte(); //Количество объектов
-                        tileArray[y, x, 2] = world.ReadUInt16(); //Эффекты плитки
+                        tileArray[tileY, tileX, 0] = world.ReadUInt16(); //Полные текстуры
+                        tileArray[tileY, tileX, 1] = world.ReadUInt16(); //Половинчатые текстуры
+                        var buf1 = world.ReadUInt16();
+                        tileArray[tileY, tileX, 5] = world.ReadByte(); //Количество объектов
+                        tileArray[tileY, tileX, 2] = world.ReadUInt16(); //Эффекты плитки
                         buf1 = world.ReadByte();
-                        tileArray[y, x, 3] = world.ReadUInt16(); //var1
-                        tileArray[y, x, 4] = world.ReadUInt16(); //var2
+                        tileArray[tileY, tileX, 3] = world.ReadUInt16(); //var1
+                        tileArray[tileY, tileX, 4] = world.ReadUInt16(); //var2
                         buf1 = world.ReadUInt16();
 
-                        for (int i = 0; i < tileArray[y, x, 5]; i++)
+                        for (int i = 0; i < tileArray[tileY, tileX, 5]; i++)
                         {
-                            object_ = world.ReadBytes(8);
-                            XY = object_[0] + object_[1] % 16 * 4 * 64;
-                            tileArray[y, x, 6 * i + 6] = XY % 64; //Х кор
-                            tileArray[y, x, 6 * i + 7] = XY / 64; //Y кор
-                            tileArray[y, x, 6 * i + 10] = object_[1] / 16 + object_[2] * 16 + object_[3] * 4096; //Номер
-                            tileArray[y, x, 6 * i + 8] = object_[4]; //Высота
-                            tileArray[y, x, 6 * i + 9] = object_[5] / 4 + object_[6] * 64; //Имя
-                            tileArray[y, x, 6 * i + 11] = object_[7]; //var3
+                            var tempX = world.ReadByte();
+                            var tempY = world.ReadByte();
+                            var id2 = world.ReadByte();
+                            var id3 = world.ReadByte();
+                            var height = world.ReadByte();
+                            var name1 = world.ReadByte();
+                            var name2 = world.ReadByte();
+                            var effect = world.ReadByte();
+
+                            var objXY = tempX + tempY % 16 * 4 * 64;
+
+                            var objX = objXY % 64;
+                            var objY = objXY / 64;
+                            var objNum = tempY / 16 + id2 * 16 + id3 * 4096;
+                            var objName = name1 / 4 + name2 * 64;
+
+                            tileArray[tileY, tileX, 6 * i + 6] = objX; //Х кор
+                            tileArray[tileY, tileX, 6 * i + 7] = objY; //Y кор
+                            tileArray[tileY, tileX, 6 * i + 10] = objNum; //Номер
+                            tileArray[tileY, tileX, 6 * i + 8] = height; //Высота
+                            tileArray[tileY, tileX, 6 * i + 9] = objName; //Имя
+                            tileArray[tileY, tileX, 6 * i + 11] = effect; //var3
                         }
                     }
                 }

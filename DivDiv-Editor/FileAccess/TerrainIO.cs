@@ -8,7 +8,7 @@ namespace DivDivEditor.FileAccess
     public static class TerrainIO
     {
         // Читаем информацию о текстурах
-        public static List<Terrain> ReadTerrain(string inpFile)
+        public static List<Terrain> ReadTerrain(string inputFile)
         {
             bool terrain = true;
             int terCount = -1;
@@ -16,7 +16,7 @@ namespace DivDivEditor.FileAccess
             string[] words;
             List<Terrain> ter = new();
 
-            using StreamReader reader = new(inpFile);
+            using StreamReader reader = new(inputFile);
 
             while ((line = reader.ReadLine()) != null && terrain)
             {
@@ -40,7 +40,7 @@ namespace DivDivEditor.FileAccess
         }
 
         // Читаем информацию о текстурах
-        public static List<Metaobject> ReadMetaobject(string inpFile)
+        public static List<Metaobject> ReadMetaobject(string inputFile)
         {
             bool metaobject = false;
             int metCount = -1;
@@ -48,7 +48,7 @@ namespace DivDivEditor.FileAccess
             string[] words;
             List<Metaobject> met = new();
 
-            using StreamReader reader = new(inpFile);
+            using StreamReader reader = new(inputFile);
 
             while ((line = reader.ReadLine()) != null && !metaobject)
             {

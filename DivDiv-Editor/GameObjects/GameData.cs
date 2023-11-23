@@ -6,11 +6,11 @@ namespace DivDivEditor.GameObjects
 {
     public class GameData
     {
-        bool objectCopy;
+        private bool objectCopy;
         private int cursorOffsetX;
         private int cursorOffsetY;
         private string WorldFile;
-        private string ObjFile;
+        private string ObjectsFile;
         private List<Terrain> terrain = new();
 
         public int[,,] Tiles { get; private set; } = new int[1024, 512, 96];                     // Основной массив данных world.00x
@@ -20,12 +20,12 @@ namespace DivDivEditor.GameObjects
         private static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264];  // Массив объектов класса ObjectsInfo с описанием объектов
         private int[] buffObjectCopy = new int[35];                         //Буфферный массив для копирования или перемещения объекта
 
-        public void Initialize(string WFile, string OFile)
+        public void Initialize(string worldFile, string objectsFile)
         {
-            WorldFile = WFile;
-            ObjFile = OFile;
+            WorldFile = worldFile;
+            ObjectsFile = objectsFile;
             Tiles = WorldIO.ReadWorld(WorldFile);
-            Objects = ObjectsIO.ReadObjects2(ObjFile);
+            Objects = ObjectsIO.ReadObjects2(ObjectsFile);
             objectsInfo = ObjectsIO.ReadObjectsInfo(@"objects.de");
             terrain = TerrainIO.ReadTerrain(@"editor.dat");
         }

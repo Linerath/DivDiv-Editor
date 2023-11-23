@@ -8,61 +8,59 @@ namespace DivDivEditor.FileAccess
     {
         static List<byte> start = new();
         static List<byte> end = new();
-        static int countEgg;
+        static int encountersCount;
 
-        // Читаем информацию о точках спавна
-        public static List<int[]> ReadEggs(string inpFile)
+        public static List<int[]> ReadEncounters(string inputFile)
         {
             start.Clear();
             end.Clear();
-            bool eggsRead = false;
+            bool encountersRead = false;
             string buff = "aaaaaa";
-            List<int[]> eggs = new();
+            List<int[]> encounters = new();
 
-            if (File.Exists(inpFile))
+            if (File.Exists(inputFile))
             {
-                byte[] buffer = File.ReadAllBytes(inpFile);
+                byte[] buffer = File.ReadAllBytes(inputFile);
                 Console.WriteLine(buffer.Length);
                 for (long i = 0; i < buffer.Length; i++)
                 {
-                    if (!eggsRead) start.Add(buffer[i]);
+                    if (!encountersRead) start.Add(buffer[i]);
                     buff = buff.Substring(1) + Convert.ToChar(buffer[i]);
                     if (buff == "EggsV0")
                     {
                         i += 17;
-                        countEgg = buffer[i + 1] * 256 + buffer[i];
-                        Console.WriteLine(countEgg);
+                        encountersCount = buffer[i + 1] * 256 + buffer[i];
+                        Console.WriteLine(encountersCount);
                         i += 4;
-                        for (int j = 0; j < countEgg; j++)
+                        for (int j = 0; j < encountersCount; j++)
                         {
                             int a = 0;
-                            eggs.Add(new int[15]);
+                            encounters.Add(new int[15]);
                             for (int k = 0; k < 46; k++)
                             {
                                 if (k < 19 && k != 1 && k != 3 && k != 5 && k != 7)
                                 {
-                                    eggs[j][a] = buffer[i + 1] * 256 + buffer[i];
+                                    encounters[j][a] = buffer[i + 1] * 256 + buffer[i];
                                     a++;
                                 }
                                 i++;
                                 i++;
                             }
                         }
-                        eggsRead = true;
+                        encountersRead = true;
                     }
-                    if (eggsRead) end.Add(buffer[i]);
+                    if (encountersRead) end.Add(buffer[i]);
                 }
             }
             start.RemoveRange(start.Count - 6, 6);
 
-            return eggs;
+            return encounters;
         }
 
-        // Записываем информацию о точках спавна
-        public static void WriteEggs(string inpFile, List<int[]> eggs)
+        public static void WriteEncounters(string inputFile, List<int[]> encounters)
         {
-            countEgg = eggs.Count;
-            using BinaryWriter writer = new(File.Open(inpFile, FileMode.Create));
+            encountersCount = encounters.Count;
+            using BinaryWriter writer = new(File.Open(inputFile, FileMode.Create));
 
             for (int i = 0; i < start.Count; i++)
             {
@@ -72,13 +70,13 @@ namespace DivDivEditor.FileAccess
             byte[] rawData = { 0x45, 0x67, 0x67, 0x73, 0x56, 0x30, 0x2E, 0x39, 0x33, 0x35, 0x20, 0x32, 0x35, 0x2D, 0x30, 0x32, 0x2D, 0x32, 0x30, 0x30, 0x32 };
             writer.Write(rawData);
             writer.Write((byte)0);
-            writer.Write(countEgg);
+            writer.Write(encountersCount);
 
-            for (int i = 0; i < countEgg; i++)
+            for (int i = 0; i < encountersCount; i++)
             {
                 for (int j = 0; j < 15; j++)
                 {
-                    if (j != 12) writer.Write((ushort)eggs[i][j]);
+                    if (j != 12) writer.Write((ushort)encounters[i][j]);
                     else writer.Write((ushort)i);
                     if (j < 4) writer.Write((ushort)0);
 

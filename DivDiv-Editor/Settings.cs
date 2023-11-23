@@ -9,5 +9,10 @@
         public const string WorldFile = $@"{GameStartupDirectory}\world.x0";
         public const string ObjectsFile = $@"{GameStartupDirectory}\objects.x0";
         public const string DataFile = $@"{GameStartupDirectory}\data.000";
+
+        public static bool ShowObjects = false;
+        public static bool ShowEncounters = false;
+        public static bool ShowConsole = true;
+        public static bool ShowMenu = false;
     }
 }

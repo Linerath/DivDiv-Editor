@@ -9,29 +9,29 @@ namespace DivDivEditor.FileAccess
     {
         private static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264]; //Массив объектов класса ObjectsInfo с описанием объектов
 
-        public static int ReadObjectsCount(string inpFile)
+        public static int ReadObjectsCount(string inputFile)
         {
             long objCount = 0;
 
-            if (File.Exists(inpFile))
+            if (File.Exists(inputFile))
             {
-                FileInfo file = new(inpFile);
-                objCount = file.Length / 28;
+                FileInfo fileInfo = new(inputFile);
+                objCount = fileInfo.Length / 28;
             }
 
             return (int)objCount;
         }
 
-        public static int[,] ReadObjects(string inpFile, int maxObjectCount)
+        public static int[,] ReadObjects(string inputFile, int maxObjectCount)
         {
             int[,] objects = new int[maxObjectCount, 25];
 
-            if (File.Exists(inpFile))
+            if (File.Exists(inputFile))
             {
-                FileInfo file = new(inpFile);
-                long objCount = file.Length / 28;
+                FileInfo fileInfo = new(inputFile);
+                long objCount = fileInfo.Length / 28;
 
-                using BinaryReader obj = new(File.Open(inpFile, FileMode.Open));
+                using BinaryReader obj = new(File.Open(inputFile, FileMode.Open));
 
                 for (long i = 0; i < objCount; i++)
                 {
@@ -50,38 +50,38 @@ namespace DivDivEditor.FileAccess
             return objects;
         }
 
-        public static List<int[]> ReadObjects2(string inpFile)
+        public static List<int[]> ReadObjects2(string inputFile)
         {
-            List<int[]> objct = new();
+            List<int[]> objects = new();
 
-            if (File.Exists(inpFile))
+            if (File.Exists(inputFile))
             {
-                FileInfo file = new(inpFile);
-                long objCount = file.Length / 28;
+                FileInfo fileInfo = new(inputFile);
+                long objCount = fileInfo.Length / 28;
 
-                using BinaryReader obj = new(File.Open(inpFile, FileMode.Open));
+                using BinaryReader obj = new(File.Open(inputFile, FileMode.Open));
 
                 for (long i = 0; i < objCount; i++)
                 {
-                    objct.Add(new int[25]);
+                    objects.Add(new int[25]);
                     for (int j = 0; j < 20; j++)
                     {
-                        objct[(int)i][j] = obj.ReadByte();
+                        objects[(int)i][j] = obj.ReadByte();
                     }
-                    objct[(int)i][20] = obj.ReadUInt16();
-                    objct[(int)i][21] = obj.ReadUInt16();
-                    objct[(int)i][22] = obj.ReadByte();
-                    objct[(int)i][23] = obj.ReadByte();
-                    objct[(int)i][24] = obj.ReadUInt16();
+                    objects[(int)i][20] = obj.ReadUInt16();
+                    objects[(int)i][21] = obj.ReadUInt16();
+                    objects[(int)i][22] = obj.ReadByte();
+                    objects[(int)i][23] = obj.ReadByte();
+                    objects[(int)i][24] = obj.ReadUInt16();
                 }
             }
 
-            return objct;
+            return objects;
         }
 
-        public static void WriteObjects(string inpFile, int[,] outArray, int objCount)
+        public static void WriteObjects(string inputFile, int[,] outArray, int objCount)
         {
-            using BinaryWriter writer = new(File.Open(inpFile, FileMode.Create));
+            using BinaryWriter writer = new(File.Open(inputFile, FileMode.Create));
 
             for (int i = 0; i < objCount; i++)
             {
@@ -99,9 +99,9 @@ namespace DivDivEditor.FileAccess
         }
 
         // Записываем файл World
-        public static void WriteObjects2(string inpFile, List<int[]> obj)
+        public static void WriteObjects2(string inputFile, List<int[]> obj)
         {
-            using BinaryWriter writer = new(File.Open(inpFile, FileMode.Create));
+            using BinaryWriter writer = new(File.Open(inputFile, FileMode.Create));
 
             for (int i = 0; i < obj.Count; i++)
             {
@@ -118,12 +118,12 @@ namespace DivDivEditor.FileAccess
             }
         }
 
-        public static ObjectsInfo[] ReadObjectsInfo(string inpFile)
+        public static ObjectsInfo[] ReadObjectsInfo(string inputFile)
         {
             int a = 0;
             string line;
 
-            using StreamReader reader = new(inpFile);
+            using StreamReader reader = new(inputFile);
 
             while ((line = reader.ReadLine()) != null)
             {

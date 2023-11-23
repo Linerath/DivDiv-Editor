@@ -75,9 +75,7 @@ namespace DivDivEditor.FileAccess
 
         public static int[,,] ReadWorld(string inpFile)
         {
-            int[,,] tileArray = new int[1024, 512, 96];
-            byte[] checksumAll = new byte[4096];
-            byte[] checksum = new byte[1024];
+            int[,,] tileArray = new int[Vars.WorldHeight, Vars.WorldWidth, 96];
             byte[] tile = new byte[9];
             byte[] object_ = new byte[8];
             int XY, buf1;
@@ -85,12 +83,14 @@ namespace DivDivEditor.FileAccess
             if (File.Exists(inpFile))
             {
                 using BinaryReader world = new(File.Open(inpFile, FileMode.Open));
-                checksumAll = world.ReadBytes(4096);
 
-                for (int y = 0; y < 1024; y++)
+                var globalHash = world.ReadBytes(Vars.GlobalHashBytes);
+
+                for (int y = 0; y < Vars.WorldHeight; y++)
                 {
-                    checksum = world.ReadBytes(1024);
-                    for (int x = 0; x < 512; x++)
+                    var rowHash = world.ReadBytes(Vars.RowHashBytes);
+
+                    for (int x = 0; x < Vars.WorldWidth; x++)
                     {
                         tileArray[y, x, 0] = world.ReadUInt16(); //Полные текстуры
                         tileArray[y, x, 1] = world.ReadUInt16(); //Половинчатые текстуры
@@ -101,6 +101,7 @@ namespace DivDivEditor.FileAccess
                         tileArray[y, x, 3] = world.ReadUInt16(); //var1
                         tileArray[y, x, 4] = world.ReadUInt16(); //var2
                         buf1 = world.ReadUInt16();
+
                         for (int i = 0; i < tileArray[y, x, 5]; i++)
                         {
                             object_ = world.ReadBytes(8);

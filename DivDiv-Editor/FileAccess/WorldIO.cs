@@ -131,5 +131,14 @@ namespace DivDivEditor.FileAccess
 
             return tileArray;
         }
+
+        public static Map ReadWorldMap(string inputFile)
+        {
+            using BinaryReader world = new(File.Open(inputFile, FileMode.Open));
+
+            Map map = new(world);
+
+            return map;
+        }
     }
 }

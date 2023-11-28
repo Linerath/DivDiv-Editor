@@ -23,6 +23,7 @@ namespace DivDivEditor.GameObjects
         public void Initialize(string worldFile, string objectsFile)
         {
             WorldFile = worldFile;
+            //var map = WorldIO.ReadWorldMap(WorldFile);
             ObjectsFile = objectsFile;
             Tiles = WorldIO.ReadWorld(WorldFile);
             Objects = ObjectsIO.ReadObjects2(ObjectsFile);

@@ -17,6 +17,8 @@ namespace DivDivEditor.GameObjects
 
         public List<TileObject> Objects { get; private set; }
 
+        public int[] Array => new[] { BottomTexture, TopTexture, buffer1, ObjectsCount, Effects, buffer2, unknown1, unknown2, buffer3 };
+
         public Tile(BinaryReader reader)
         {
             BottomTexture = reader.ReadUInt16();

@@ -18,6 +18,8 @@ namespace DivDivEditor.GameObjects
         public int Number { get; set; }
         public int Name { get; set; }
 
+        public int[] Array => new int[] { tempX, tempY, id2, id3, Height, name1, name2, Effect };
+
         public TileObject(BinaryReader reader)
         {
             tempX = reader.ReadByte();

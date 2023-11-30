@@ -4,7 +4,7 @@ namespace DivDivEditor.GameObjects
 {
     public class Map
     {
-        public Tile[,] Tiles { get; private set; } = new Tile[Vars.WorldWidth, Vars.WorldHeight];
+        public Tile[,] Tiles { get; private set; } = new Tile[Vars.WorldHeight, Vars.WorldWidth];
 
         public Map(BinaryReader reader)
         {
@@ -17,9 +17,29 @@ namespace DivDivEditor.GameObjects
                 for (int x = 0; x < Vars.WorldWidth; x++)
                 {
                     Tile tile = new(reader);
-                    Tiles[x, y] = tile;
+                    Tiles[y, x] = tile;
                 }
             }
+        }
+
+        public int[,,] ToOldTilesArray()
+        {
+            int[,,] tilesArray = new int[Vars.WorldHeight, Vars.WorldWidth, 96];
+
+            for (int y = 0; y < Vars.WorldHeight; y++)
+            {
+                for (int x = 0; x < Vars.WorldWidth; x++)
+                {
+                    var tileArray = Tiles[y, x].Array;
+
+                    for (int i = 0; i < tileArray.Length; i++)
+                    {
+                        tilesArray[y, x, i] = tileArray[i];
+                    }
+                }
+            }
+
+            return tilesArray;
         }
     }
 }

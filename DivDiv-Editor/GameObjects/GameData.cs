@@ -11,19 +11,23 @@ namespace DivDivEditor.GameObjects
         private string WorldFile;
         private List<Terrain> terrain = new();
 
-        public int[,,] Tiles { get; private set; } = new int[1024, 512, 96];
+        public int[,,] Tiles { get; private set; } = new int[Vars.WorldHeight, Vars.WorldWidth, 96];
 
         public void Initialize(string worldFile, string objectsFile)
         {
             WorldFile = worldFile;
-            Tiles = WorldIO.ReadWorld(WorldFile);
 
+            var map = WorldIO.ReadWorldMap(WorldFile);
+            Tiles = map.ToOldTilesArray();
+
+            FileLogger.LogOldTiles(Tiles);
+
+            terrain = TerrainIO.ReadTerrain(@"editor.dat");
 #if OBJECTS
             ObjectsFile = objectsFile;
             Objects = ObjectsIO.ReadObjects2(ObjectsFile);
             objectsInfo = ObjectsIO.ReadObjectsInfo(@"objects.de");
 #endif
-            terrain = TerrainIO.ReadTerrain(@"editor.dat");
         }
 
         public string GetFullTileTexturesName(int x, int y)

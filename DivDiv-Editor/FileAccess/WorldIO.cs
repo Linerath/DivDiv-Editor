@@ -74,7 +74,16 @@ namespace DivDivEditor.FileAccess
             writer.Write(103);
         }
 
-        public static int[,,] ReadWorld(string inputFile)
+        public static Map ReadWorldMap(string inputFile)
+        {
+            using BinaryReader world = new(File.Open(inputFile, FileMode.Open));
+
+            Map map = new(world);
+
+            return map;
+        }
+
+        public static int[,,] ReadWorldOld(string inputFile)
         {
             int[,,] tileArray = new int[Vars.WorldHeight, Vars.WorldWidth, 96];
 
@@ -130,15 +139,6 @@ namespace DivDivEditor.FileAccess
             }
 
             return tileArray;
-        }
-
-        public static Map ReadWorldMap(string inputFile)
-        {
-            using BinaryReader world = new(File.Open(inputFile, FileMode.Open));
-
-            Map map = new(world);
-
-            return map;
         }
     }
 }

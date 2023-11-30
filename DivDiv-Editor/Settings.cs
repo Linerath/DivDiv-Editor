@@ -10,6 +10,8 @@
         public const string ObjectsFile = $@"{GameStartupDirectory}\objects.x0";
         public const string DataFile = $@"{GameStartupDirectory}\data.000";
 
+        public const string FilesLogDirectory = @"C:\prging\DivDiv-Editor\FileLogs";
+
         public static bool ShowObjects = false;
         public static bool ShowEncounters = false;
         public static bool ShowConsole = true;

@@ -5,17 +5,25 @@ namespace DivDivEditor.FileAccess
 {
     public static class FileLogger
     {
-        public static void LogOldTiles(int[,,] tiles, string fileName = "TilesOld")
+        public static void LogTiles(int[,,] tiles, string fileName = "Tiles")
         {
+            if (!Settings.LogginOn)
+                return;
+
             StringBuilder sb = new();
 
             for (int y = 0; y < tiles.GetLength(0); y++)
             {
                 for (int x = 0; x < tiles.GetLength(1); x++)
                 {
-                    var value = $"{tiles[y, x, 0]} ";
-                    sb.Append(value);
+                    for (int z = 0; z < tiles.GetLength(2); z++)
+                    {
+                        var value = $"{tiles[y, x, z]} ";
+                        sb.Append(value);
+                    }
+                    sb.AppendLine();
                 }
+                sb.AppendLine();
                 sb.AppendLine();
             }
 
@@ -24,6 +32,9 @@ namespace DivDivEditor.FileAccess
 
         private static void Log(string fileName, string content)
         {
+            if (!Settings.LogginOn)
+                return;
+
             var filePath = $@"{Settings.FilesLogDirectory}\{fileName}.txt";
 
             File.Delete(filePath);

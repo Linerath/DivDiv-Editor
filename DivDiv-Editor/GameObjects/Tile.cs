@@ -17,8 +17,6 @@ namespace DivDivEditor.GameObjects
 
         public List<TileObject> Objects { get; private set; }
 
-        public int[] Array => new[] { BottomTexture, TopTexture, buffer1, ObjectsCount, Effects, buffer2, unknown1, unknown2, buffer3 };
-
         public Tile(BinaryReader reader)
         {
             BottomTexture = reader.ReadUInt16();
@@ -39,5 +37,35 @@ namespace DivDivEditor.GameObjects
                 Objects.Add(tileObj);
             }
         }
+
+        public int[] ToOldArray()
+        {
+            int[] arr = new int[96];
+
+            var i = 0;
+            arr[i++] = BottomTexture;
+            arr[i++] = TopTexture;
+            arr[i++] = Effects;
+            arr[i++] = unknown1;
+            arr[i++] = unknown2;
+            arr[i++] = ObjectsCount;
+
+            foreach (var obj in Objects)
+            {
+                foreach (var objValue in obj.ToOldArray())
+                    arr[i++] = objValue;
+            }
+
+            return arr;
+        }
+    }
+
+    public enum TileEffect
+    {
+        None = 0,
+        Water = 2,
+        Indoors = 4,
+        Fog = 8,
+        WaterFog = 10,
     }
 }

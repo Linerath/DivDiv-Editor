@@ -1,4 +1,4 @@
-﻿//#define OBJECTS
+﻿#define OBJECTS
 
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace DivDivEditor
     {
         public bool IAmActive { get; set; }
         private GraphicsDeviceManager _graphics;
-        private Graphics.SpriteBatch _spriteBatch;
+        private SpriteBatch _spriteBatch;
         Texture2D MenuPointerUp;
         Texture2D MenuPointerDown;
         Texture2D MenuLine;
@@ -63,7 +63,6 @@ namespace DivDivEditor
         int yCor = 0; //Координата экрана
         bool showConsole = true;
         bool showTexturesFrame = false;
-        bool showTileEffect = false;
         bool showEncounters = false;
         bool objectWork = false;
         bool textureWork = false;
@@ -187,8 +186,14 @@ namespace DivDivEditor
             {
                 for (int j = 0; j < Window.ClientBounds.Height / 64 + 1; j++)
                 {
-                    TilesGreedFull[i, j] = Content.Load<Texture2D>(GD.GetFullTileTexturesName(i + xCor, j + yCor));
-                    TilesGreedHalf[i, j] = Content.Load<Texture2D>(GD.GetHalfTileTexturesName(i + xCor, j + yCor));
+                    var x = i + xCor;
+                    var y = j + yCor;
+
+                    var bottomTexture = GD.GetTileTextureName(x, y, true);
+                    var topTexture = GD.GetTileTextureName(x, y, false);
+
+                    TilesGreedFull[i, j] = Content.Load<Texture2D>(bottomTexture);
+                    TilesGreedHalf[i, j] = Content.Load<Texture2D>(topTexture);
                 }
             }
 
@@ -728,7 +733,7 @@ namespace DivDivEditor
             // E
             if (keyboardState.IsKeyDown(Keys.E) && Stopwatch.GetTimestamp() - timer_2 > 2500000)
             {
-                showTileEffect = !showTileEffect;
+                Settings.ShowTileEffect = !Settings.ShowTileEffect;
                 timer_2 = Stopwatch.GetTimestamp();
             }
 
@@ -752,53 +757,38 @@ namespace DivDivEditor
             button[1].yCor = Window.ClientBounds.Height - 30; //Обновляем положение кнопки после изменения размера окна
         }
 
-        //Выводим текстуры плитки
         public void RenderTextures()
         {
             for (int i = 0; i < Window.ClientBounds.Width / 64; i++)
             {
                 for (int j = 0; j < Window.ClientBounds.Height / 64 + 1; j++)
                 {
+                    Color color;
                     int effect = GD.GetTileEffect(i + xCor, j + yCor);
-                    if (showTileEffect && effect != 0)
+
+                    if (Settings.ShowTileEffect && effect != 0)
                     {
-                        // 0 2 4 6 8 10 12 20 28 36 64 66 68 72 74 76 80 82 84 88 90 92 94 96 100
-                        if (effect == 2)//Вода
+                        var effectType = (TileEffect)effect;
+                        color = effectType switch
                         {
-                            _spriteBatch.Draw(TilesGreedFull[i, j], new Vector2(i * 64, j * 64), Color.Gold);
-                            _spriteBatch.Draw(TilesGreedHalf[i, j], new Vector2(i * 64, j * 64), Color.Gold);
-                        }
-                        if (effect == 4)//Помещение
-                        {
-                            _spriteBatch.Draw(TilesGreedFull[i, j], new Vector2(i * 64, j * 64), Color.Maroon);
-                            _spriteBatch.Draw(TilesGreedHalf[i, j], new Vector2(i * 64, j * 64), Color.Maroon);
-                        }
-                        if (effect == 8)//Туман
-                        {
-                            _spriteBatch.Draw(TilesGreedFull[i, j], new Vector2(i * 64, j * 64), Color.Aqua);
-                            _spriteBatch.Draw(TilesGreedHalf[i, j], new Vector2(i * 64, j * 64), Color.Aqua);
-                        }
-                        if (effect == 10)//Вода и туман
-                        {
-                            _spriteBatch.Draw(TilesGreedFull[i, j], new Vector2(i * 64, j * 64), Color.Red);
-                            _spriteBatch.Draw(TilesGreedHalf[i, j], new Vector2(i * 64, j * 64), Color.Red);
-                        }
-                        if (effect > 10)
-                        {
-                            _spriteBatch.Draw(TilesGreedFull[i, j], new Vector2(i * 64, j * 64), Color.Silver);
-                            _spriteBatch.Draw(TilesGreedHalf[i, j], new Vector2(i * 64, j * 64), Color.Silver);
-                        }
+                            TileEffect.Water => Color.Gold,
+                            TileEffect.Indoors => Color.Maroon,
+                            TileEffect.Fog => Color.Aqua,
+                            TileEffect.WaterFog => Color.Red,
+                            _ => Color.Silver
+                        };
                     }
                     else
                     {
-                        _spriteBatch.Draw(TilesGreedFull[i, j], new Vector2(i * 64, j * 64), Color.White);
-                        _spriteBatch.Draw(TilesGreedHalf[i, j], new Vector2(i * 64, j * 64), Color.White);
+                        color = Color.White;
                     }
+
+                    _spriteBatch.Draw(TilesGreedFull[i, j], new Vector2(i * 64, j * 64), color);
+                    _spriteBatch.Draw(TilesGreedHalf[i, j], new Vector2(i * 64, j * 64), color);
                 }
             }
         }
 
-        //Выводим точки спавна
         public void RenderEncounters()
         {
             for (int i = 0; i < encounters.Count; i++)

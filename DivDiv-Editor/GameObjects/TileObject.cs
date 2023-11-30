@@ -18,8 +18,6 @@ namespace DivDivEditor.GameObjects
         public int Number { get; set; }
         public int Name { get; set; }
 
-        public int[] Array => new int[] { tempX, tempY, id2, id3, Height, name1, name2, Effect };
-
         public TileObject(BinaryReader reader)
         {
             tempX = reader.ReadByte();
@@ -36,8 +34,10 @@ namespace DivDivEditor.GameObjects
             X = XY % 64;
             Y = XY / 64;
 
-            Number = tempX / 16 + id2 * 16 + id3 * 4096;
+            Number = tempY / 16 + id2 * 16 + id3 * 4096;
             Name = name1 / 4 + name2 * 64;
         }
+
+        public int[] ToOldArray() => new int[] { X, Y, Height, Name, Number, Effect };
     }
 }

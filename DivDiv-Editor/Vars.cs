@@ -7,6 +7,7 @@
 
         public const int TileBytesPerHash = 2;
         public const int RowHashBytes = WorldWidth * TileBytesPerHash;
+        public const int TileMaxObjects = 14;
 
         public const int GlobalHashBytesPerRow = 4;
         public const int GlobalHashBytes = WorldHeight * GlobalHashBytesPerRow;

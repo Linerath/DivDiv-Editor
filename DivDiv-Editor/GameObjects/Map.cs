@@ -30,12 +30,10 @@ namespace DivDivEditor.GameObjects
             {
                 for (int x = 0; x < Vars.WorldWidth; x++)
                 {
-                    var tileArray = Tiles[y, x].Array;
+                    var tileArray = Tiles[y, x].ToOldArray();
 
-                    for (int i = 0; i < tileArray.Length; i++)
-                    {
-                        tilesArray[y, x, i] = tileArray[i];
-                    }
+                    for (int z = 0; z < tileArray.Length; z++)
+                        tilesArray[y, x, z] = tileArray[z];
                 }
             }
 

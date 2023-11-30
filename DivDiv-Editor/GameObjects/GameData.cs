@@ -1,4 +1,4 @@
-﻿//#define OBJECTS
+﻿#define OBJECTS
 
 using System.Collections.Generic;
 using DivDivEditor.FileAccess;
@@ -11,16 +11,17 @@ namespace DivDivEditor.GameObjects
         private string WorldFile;
         private List<Terrain> terrain = new();
 
-        public int[,,] Tiles { get; private set; } = new int[Vars.WorldHeight, Vars.WorldWidth, 96];
+        public int[,,] Tiles { get; private set; }
+        public Tile[,] TilesNew { get; private set; }
 
         public void Initialize(string worldFile, string objectsFile)
         {
             WorldFile = worldFile;
 
             var map = WorldIO.ReadWorldMap(WorldFile);
-            Tiles = map.ToOldTilesArray();
 
-            FileLogger.LogOldTiles(Tiles);
+            TilesNew = map.Tiles;
+            Tiles = map.ToOldTilesArray();
 
             terrain = TerrainIO.ReadTerrain(@"editor.dat");
 #if OBJECTS
@@ -30,22 +31,14 @@ namespace DivDivEditor.GameObjects
 #endif
         }
 
-        public string GetFullTileTexturesName(int x, int y)
+        public string GetTileTextureName(int x, int y, bool bottomTexture)
         {
-            if (Tiles[y, x, 0] < 9369)
-            {
-                return "floor/" + Tiles[y, x, 0].ToString().PadLeft(6, '0');
-            }
-            else return "floor/003271";
-        }
+            var value = bottomTexture
+                ? TilesNew[y, x].BottomTexture
+                : TilesNew[y, x].TopTexture;
+            var name = AssetsHelper.GetTileTextureName(value);
 
-        public string GetHalfTileTexturesName(int x, int y)
-        {
-            if (Tiles[y, x, 1] < 9369)
-            {
-                return "floor/" + Tiles[y, x, 1].ToString().PadLeft(6, '0');
-            }
-            else return "floor/003271";
+            return name;
         }
 
         public int[] GetTile(int x, int y)
@@ -275,7 +268,7 @@ namespace DivDivEditor.GameObjects
         private int cursorOffsetY;
         private string ObjectsFile;
 
-        public List<int[]> Objects { get; private set; } = new();                                // [25] Основной массив объектов 
+        public List<int[]> Objects { get; private set; } = new();           // [25] Основной массив объектов 
         private List<int[]> objectsInFrame = new();                         // [9] Имя, плитка по X, плитка по Y, номер на плитке, положение по X, положение по Y, высота, мировая координата, номер 
         private List<int> obgSort = new();                                  // Сортировка объектов 
         private static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264];  // Массив объектов класса ObjectsInfo с описанием объектов

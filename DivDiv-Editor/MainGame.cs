@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define OBJECTS
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using DivDivEditor.FileAccess;
@@ -157,8 +159,10 @@ namespace DivDivEditor
 
             RenderTextures();
 
+#if OBJECTS
             if (Settings.ShowObjects)
                 RenderObjects();
+#endif
 
             if (Settings.ShowEncounters)
                 RenderEncounters();
@@ -177,6 +181,23 @@ namespace DivDivEditor
             base.Draw(gameTime);
         }
 
+        public void update_tile_and_objects()// Обновляем отображаемые плитки и объекты
+        {
+            for (int i = 0; i < Window.ClientBounds.Width / 64; i++)
+            {
+                for (int j = 0; j < Window.ClientBounds.Height / 64 + 1; j++)
+                {
+                    TilesGreedFull[i, j] = Content.Load<Texture2D>(GD.GetFullTileTexturesName(i + xCor, j + yCor));
+                    TilesGreedHalf[i, j] = Content.Load<Texture2D>(GD.GetHalfTileTexturesName(i + xCor, j + yCor));
+                }
+            }
+
+#if OBJECTS
+            if (Settings.ShowObjects)
+                GD.UpdateDisplayedObjects(xCor, yCor, Window.ClientBounds.Width, Window.ClientBounds.Height, movingAnObject);
+#endif
+        }
+
         public void ActivateMyGame(object sendet, EventArgs args)
         {
             IAmActive = true;
@@ -193,8 +214,10 @@ namespace DivDivEditor
             bool eventHandledAlready = false;
             MouseState currentMouseState = Mouse.GetState();
             KeyboardState keyboardState = Keyboard.GetState();
+
             if (currentMouseState.LeftButton == ButtonState.Pressed) mouseLBState = true;
             else mouseLBState = false;
+
             if (currentMouseState.RightButton == ButtonState.Pressed) mouseRBState = true;
             else mouseRBState = false;
 
@@ -210,6 +233,7 @@ namespace DivDivEditor
                 }
                 menuSelected = true;
             }
+
             if (button[1].Click(currentMouseState.X, currentMouseState.Y, mouseLBState) && !eventHandledAlready)
             {
                 if (Stopwatch.GetTimestamp() - timer_3 > 3000000)
@@ -222,6 +246,7 @@ namespace DivDivEditor
                 }
                 menuSelected = true;
             }
+
             if (button[2].Click(currentMouseState.X, currentMouseState.Y, mouseLBState) && !eventHandledAlready) //Menu
             {
                 if (Stopwatch.GetTimestamp() - timer_3 > 3000000)
@@ -241,6 +266,7 @@ namespace DivDivEditor
                 }
                 menuSelected = true;
             }
+
             if (button[3].Click(currentMouseState.X, currentMouseState.Y, mouseLBState) && !eventHandledAlready) //Textures
             {
                 if (Stopwatch.GetTimestamp() - timer_3 > 3000000)
@@ -258,6 +284,7 @@ namespace DivDivEditor
                 }
                 menuSelected = true;
             }
+
             if (button[4].Click(currentMouseState.X, currentMouseState.Y, mouseLBState) && !eventHandledAlready) //Objects
             {
                 if (Stopwatch.GetTimestamp() - timer_3 > 3000000)
@@ -275,6 +302,7 @@ namespace DivDivEditor
                 }
                 menuSelected = true;
             }
+
             if (button[5].Click(currentMouseState.X, currentMouseState.Y, mouseLBState) && !eventHandledAlready) //Monsters
             {
                 if (Stopwatch.GetTimestamp() - timer_3 > 3000000)
@@ -293,6 +321,7 @@ namespace DivDivEditor
                 }
                 menuSelected = true;
             }
+
             //Редактировать плитку ПКМ
             if (mouseRBState && showTexturesFrame && !objectWork && !showEncounters && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
@@ -320,6 +349,8 @@ namespace DivDivEditor
                 }
                 timer_4 = Stopwatch.GetTimestamp();
             }
+
+#if OBJECTS
             //Редактировать объект ПКМ
             if (selectedObject >= 0 && mouseRBState && !showTexturesFrame && objectWork && !showEncounters && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
@@ -343,6 +374,8 @@ namespace DivDivEditor
                 }
                 timer_4 = Stopwatch.GetTimestamp();
             }
+#endif
+
             //Инфо о плитке
             if (mouseLBState && !showTexturesFrame && !objectWork && !showEncounters && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
@@ -365,6 +398,8 @@ namespace DivDivEditor
                 if (currentMouseState.ScrollWheelValue > ScrollWheelOldValue && textures < Terrain.TotalCount() - 1) textures++;
                 if (currentMouseState.ScrollWheelValue < ScrollWheelOldValue && textures > 0) textures--;
             }
+
+#if OBJECTS
             //Выбор объекта
             if (!menuSelected && objectWork && mouseLBState && mouseLBOldState == false && !eventHandledAlready && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
@@ -396,6 +431,8 @@ namespace DivDivEditor
                 }
                 timer_4 = Stopwatch.GetTimestamp();
             }
+#endif
+
             //Выбор монстра
             if (!menuSelected && showEncounters && mouseLBState && mouseLBOldState == false && !eventHandledAlready && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
@@ -430,11 +467,15 @@ namespace DivDivEditor
                 }
                 timer_4 = Stopwatch.GetTimestamp();
             }
+
+#if OBJECTS
             //Удаление объекта
             if (!menuSelected && selectedObject >= 0 && keyboardState.IsKeyDown(Keys.Delete))
             {
                 selectedObject = GD.ObjectDel(selectedObject);
             }
+#endif
+
             //Удаление монстра
             if (!menuSelected && selectedEncounter >= 0 && keyboardState.IsKeyDown(Keys.Delete))
             {
@@ -443,6 +484,8 @@ namespace DivDivEditor
                 ConsoleAdd("Encounter " + selectedEncounter + " delete");
                 selectedEncounter = -1;
             }
+
+#if OBJECTS
             //Начало перемещения объекта
             if (!menuSelected && selectedObject >= 0 && mouseLBOldState && !movingAnObject && Stopwatch.GetTimestamp() - timer_4 > 1500000)
             {
@@ -455,6 +498,8 @@ namespace DivDivEditor
                 }
                 timer_4 = Stopwatch.GetTimestamp();
             }
+#endif
+
             //Начало перемещения монстра
             if (!menuSelected && showEncounters && selectedEncounter >= 0 && mouseLBOldState && !movingAnEncounter && Stopwatch.GetTimestamp() - timer_4 > 1500000)
             {
@@ -491,59 +536,74 @@ namespace DivDivEditor
                 }
                 timer_4 = Stopwatch.GetTimestamp();
             }
+
+#if OBJECTS
             //Перемещение объекта
             if (!menuSelected && movingAnObject && mouseLBOldState && mouseLBState)
             {
                 GD.MovingAnObject(keyboardState.IsKeyDown(Keys.LeftShift), currentMouseState.X, currentMouseState.Y);
             }
+#endif
+
             //Перемещение монстра
             if (!menuSelected && showEncounters && movingAnEncounter && mouseLBOldState && mouseLBState && selectedEncounter >= 0)
             {
                 encounters[selectedEncounter][0] = xCor * 64 + currentMouseState.X - cursorOffsetX;
                 encounters[selectedEncounter][1] = yCor * 64 + currentMouseState.Y - cursorOffsetY;
             }
+
             //Конец перемещения монстра
             if (!menuSelected && showEncounters && movingAnEncounter && mouseLBOldState && !mouseLBState)
             {
                 movingAnEncounter = false;
             }
+
+#if OBJECTS
             //Вставка объекта после перемещения
             if (!menuSelected && movingAnObject && mouseLBOldState && !mouseLBState)
             {
                 movingAnObject = GD.PasteObjectAfterMove(xCor, yCor, currentMouseState.X, currentMouseState.Y, keyboardState.IsKeyDown(Keys.LeftShift));
             }
+
             //Изменение высоты объекта
             if (!menuSelected && selectedObject >= 0 && (keyboardState.IsKeyDown(Keys.Up) || keyboardState.IsKeyDown(Keys.Down)))
             {
                 GD.ChangingHeightObject(selectedObject, keyboardState.IsKeyDown(Keys.Up));
             }
+#endif
+
             //Наложение текстуры
             if (!menuSelected && textureWork && mouseLBState && (currentMouseState.Y / 64 + yCor) > 0 && (currentMouseState.X / 64 + xCor) > 0 && !eventHandledAlready && Stopwatch.GetTimestamp() - timer_4 > 100000)
             {
                 GD.TextureMapping(textures, currentMouseState.X, currentMouseState.Y, xCor, yCor, keyboardState.IsKeyDown(Keys.LeftShift), keyboardState.IsKeyDown(Keys.LeftControl));
                 timer_4 = Stopwatch.GetTimestamp();
             }
+
             //Сдвиг экрана мышью
             if (currentMouseState.X < 15 && fullScreen && Stopwatch.GetTimestamp() - timer_1 > 100000)
             {
                 if (xCor > 1) xCor--;
                 selectedObject = -1;
             }
+
             if (currentMouseState.X > Window.ClientBounds.Width - 15 && fullScreen && Stopwatch.GetTimestamp() - timer_1 > 100000)
             {
                 if (xCor < 511 - Window.ClientBounds.Width / 64) xCor++;
                 selectedObject = -1;
             }
+
             if (currentMouseState.Y < 50 && fullScreen && Stopwatch.GetTimestamp() - timer_1 > 100000)
             {
                 if (yCor > 1) yCor--;
                 selectedObject = -1;
             }
+
             if (currentMouseState.Y > Window.ClientBounds.Height - 15 && fullScreen && Stopwatch.GetTimestamp() - timer_1 > 100000)
             {
                 if (yCor < 1023 - Window.ClientBounds.Height / 64) yCor++;
                 selectedObject = -1;
             }
+
             timer_1 = Stopwatch.GetTimestamp();
             //Выбор разрешения экрана
             for (byte i = 0; i < FunctionKeys.Length; i++)
@@ -559,6 +619,7 @@ namespace DivDivEditor
                     selectedObject = -1;
                 }
             }
+
             //Полный экран
             if (keyboardState.IsKeyDown(Keys.F8) && Stopwatch.GetTimestamp() - timer_2 > 2500000)
             {
@@ -570,6 +631,7 @@ namespace DivDivEditor
                 selectedObject = -1;
                 timer_2 = Stopwatch.GetTimestamp();
             }
+
             //Выход из приложения
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 Exit();
@@ -579,21 +641,25 @@ namespace DivDivEditor
                 if (xCor > 1) xCor--;
                 selectedObject = -1;
             }
+
             if (keyboardState.IsKeyDown(Keys.D))
             {
                 if (xCor < 511 - Window.ClientBounds.Width / 64) xCor++;
                 selectedObject = -1;
             }
+
             if (keyboardState.IsKeyDown(Keys.W))
             {
                 if (yCor > 1) yCor--;
                 selectedObject = -1;
             }
+
             if (keyboardState.IsKeyDown(Keys.S))
             {
                 if (yCor < 1023 - Window.ClientBounds.Height / 64) yCor++;
                 selectedObject = -1;
             }
+
             //Читать мир R
             if (keyboardState.IsKeyDown(Keys.R) && Stopwatch.GetTimestamp() - timer_2 > 2500000)
             {
@@ -602,15 +668,19 @@ namespace DivDivEditor
                 ConsoleAdd("Read warld and objects");
                 timer_2 = Stopwatch.GetTimestamp();
             }
+
             //Записать мир T
             if (keyboardState.IsKeyDown(Keys.T) && Stopwatch.GetTimestamp() - timer_2 > 2500000)
             {
+#if OBJECTS
                 ObjectsIO.WriteObjects2(Settings.ObjectsFile, GD.Objects);
+#endif
                 WorldIO.WriteWorld(Settings.WorldFile, GD.Tiles);
                 EncountersIO.WriteEncounters(Settings.DataFile, encounters);
                 ConsoleAdd("Save warld and objects");
                 timer_2 = Stopwatch.GetTimestamp();
             }
+
             // Q 
             if (keyboardState.IsKeyDown(Keys.Q) && Stopwatch.GetTimestamp() - timer_2 > 50000)
             {
@@ -654,6 +724,7 @@ namespace DivDivEditor
 
                 timer_2 = Stopwatch.GetTimestamp();
             }
+
             // E
             if (keyboardState.IsKeyDown(Keys.E) && Stopwatch.GetTimestamp() - timer_2 > 2500000)
             {
@@ -724,16 +795,6 @@ namespace DivDivEditor
                         _spriteBatch.Draw(TilesGreedHalf[i, j], new Vector2(i * 64, j * 64), Color.White);
                     }
                 }
-            }
-        }
-
-        // Выводим объекты
-        public void RenderObjects()
-        {
-            for (int i = 0; i < GD.GetObjectCount(); i++)
-            {
-                if (i == selectedObject) _spriteBatch.Draw(Content.Load<Texture2D>(GD.GetObjectPath(i)), GD.GetObjectPosition(i), Color.Yellow);
-                else _spriteBatch.Draw(Content.Load<Texture2D>(GD.GetObjectPath(i)), GD.GetObjectPosition(i), Color.White);
             }
         }
 
@@ -825,38 +886,6 @@ namespace DivDivEditor
             }
         }
 
-        public void update_tile_and_objects()// Обновляем отображаемые плитки и объекты
-        {
-            for (int i = 0; i < Window.ClientBounds.Width / 64; i++)
-            {
-                for (int j = 0; j < Window.ClientBounds.Height / 64 + 1; j++)
-                {
-                    TilesGreedFull[i, j] = Content.Load<Texture2D>(GD.GetFullTileTexturesName(i + xCor, j + yCor));
-                    TilesGreedHalf[i, j] = Content.Load<Texture2D>(GD.GetHalfTileTexturesName(i + xCor, j + yCor));
-                }
-            }
-
-            if (Settings.ShowObjects)
-                GD.UpdateDisplayedObjects(xCor, yCor, Window.ClientBounds.Width, Window.ClientBounds.Height, movingAnObject);
-        }
-
-        public Color[,] getColorArray(int objNum)
-        {
-            int objName = GD.GetObjectName(objNum);
-            SelectObj = Content.Load<Texture2D>("objects/" + objName.ToString().PadLeft(6, '0'));
-            Color[] ColorArray = new Color[objectsInfo[objName].width * objectsInfo[objName].height];
-            SelectObj.GetData(ColorArray);
-            Color[,] colors2D = new Color[objectsInfo[objName].width, objectsInfo[objName].height];
-            for (int r = 0; r < objectsInfo[objName].width; r++)
-            {
-                for (int t = 0; t < objectsInfo[objName].height; t++)
-                {
-                    colors2D[r, t] = ColorArray[r + t * objectsInfo[objName].width];
-                }
-            }
-            return colors2D;
-        }
-
         public bool checkCursorInSprite(int[] obj, int x, int y)
         {
             if (x > obj[4] &&
@@ -879,6 +908,36 @@ namespace DivDivEditor
                 System.Diagnostics.Debug.WriteLine("New resolution: {0} x {1}", _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight);
             }
         }
+
+
+#if OBJECTS
+        // Выводим объекты
+        public void RenderObjects()
+        {
+            for (int i = 0; i < GD.GetObjectCount(); i++)
+            {
+                if (i == selectedObject) _spriteBatch.Draw(Content.Load<Texture2D>(GD.GetObjectPath(i)), GD.GetObjectPosition(i), Color.Yellow);
+                else _spriteBatch.Draw(Content.Load<Texture2D>(GD.GetObjectPath(i)), GD.GetObjectPosition(i), Color.White);
+            }
+        }
+
+        public Color[,] getColorArray(int objNum)
+        {
+            int objName = GD.GetObjectName(objNum);
+            SelectObj = Content.Load<Texture2D>("objects/" + objName.ToString().PadLeft(6, '0'));
+            Color[] ColorArray = new Color[objectsInfo[objName].width * objectsInfo[objName].height];
+            SelectObj.GetData(ColorArray);
+            Color[,] colors2D = new Color[objectsInfo[objName].width, objectsInfo[objName].height];
+            for (int r = 0; r < objectsInfo[objName].width; r++)
+            {
+                for (int t = 0; t < objectsInfo[objName].height; t++)
+                {
+                    colors2D[r, t] = ColorArray[r + t * objectsInfo[objName].width];
+                }
+            }
+            return colors2D;
+        }
+#endif
     }
 
     public class Button

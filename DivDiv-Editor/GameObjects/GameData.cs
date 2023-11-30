@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿//#define OBJECTS
+
+using System.Collections.Generic;
 using DivDivEditor.FileAccess;
 using Vector2 = Microsoft.Xna.Framework.Vector2;
 
@@ -6,28 +8,21 @@ namespace DivDivEditor.GameObjects
 {
     public class GameData
     {
-        private bool objectCopy;
-        private int cursorOffsetX;
-        private int cursorOffsetY;
         private string WorldFile;
-        private string ObjectsFile;
         private List<Terrain> terrain = new();
 
-        public int[,,] Tiles { get; private set; } = new int[1024, 512, 96];                     // Основной массив данных world.00x
-        public List<int[]> Objects { get; private set; } = new();                                // [25] Основной массив объектов 
-        private List<int[]> objectsInFrame = new();                         // [9] Имя, плитка по X, плитка по Y, номер на плитке, положение по X, положение по Y, высота, мировая координата, номер 
-        private List<int> obgSort = new();                                  // Сортировка объектов 
-        private static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264];  // Массив объектов класса ObjectsInfo с описанием объектов
-        private int[] buffObjectCopy = new int[35];                         //Буфферный массив для копирования или перемещения объекта
+        public int[,,] Tiles { get; private set; } = new int[1024, 512, 96];
 
         public void Initialize(string worldFile, string objectsFile)
         {
             WorldFile = worldFile;
-            //var map = WorldIO.ReadWorldMap(WorldFile);
-            ObjectsFile = objectsFile;
             Tiles = WorldIO.ReadWorld(WorldFile);
+
+#if OBJECTS
+            ObjectsFile = objectsFile;
             Objects = ObjectsIO.ReadObjects2(ObjectsFile);
             objectsInfo = ObjectsIO.ReadObjectsInfo(@"objects.de");
+#endif
             terrain = TerrainIO.ReadTerrain(@"editor.dat");
         }
 
@@ -47,18 +42,6 @@ namespace DivDivEditor.GameObjects
                 return "floor/" + Tiles[y, x, 1].ToString().PadLeft(6, '0');
             }
             else return "floor/003271";
-        }
-
-        public void SetObject(int n, int[] obj)
-        {
-            Objects[n] = obj;
-        }
-
-        public int[] GetObject(int num)
-        {
-            return num < Objects.Count
-                ? Objects[num]
-                : Objects[0];
         }
 
         public int[] GetTile(int x, int y)
@@ -87,100 +70,6 @@ namespace DivDivEditor.GameObjects
         public int GetTileEffect(int x, int y)
         {
             return Tiles[y, x, 2];
-        }
-
-        public void UpdateDisplayedObjects(int x, int y, int width, int height, bool moving)
-        {
-            objectsInFrame.Clear();
-            obgSort.Clear();
-
-            for (int i = -5; i < width / 64; i++)
-            {
-                for (int j = -5; j < height / 64 + 1; j++)
-                {
-                    if (j + y >= 0 && i + x >= 0)
-                    {
-                        for (int z = 0; z < Tiles[j + y, i + x, 5]; z++)
-                        {
-                            objectsInFrame.Add(new int[9]);
-                            int objCount = objectsInFrame.Count - 1;
-                            obgSort.Add(objCount);
-                            objectsInFrame[objCount][0] = Tiles[j + y, i + x, 9 + z * 6];                                   // Имя
-                            objectsInFrame[objCount][1] = i + x;                                                            // плитка по X
-                            objectsInFrame[objCount][2] = j + y;                                                            // плитка по Y
-                            objectsInFrame[objCount][3] = z;                                                                // номер на плитке
-                            objectsInFrame[objCount][4] = i * 64 + Tiles[j + y, i + x, 6 + z * 6];                          // положение по X
-                            objectsInFrame[objCount][5] = j * 64 + Tiles[j + y, i + x, 7 + z * 6];                          // положение по Y
-                            objectsInFrame[objCount][6] = Tiles[j + y, i + x, 8 + z * 6];                                   // высота
-                            int Y1 = objectsInFrame[objCount][5] + objectsInfo[objectsInFrame[objCount][0]].touchPointY;
-                            int X1 = objectsInFrame[objCount][4] + objectsInfo[objectsInFrame[objCount][0]].touchPointX;
-                            objectsInFrame[objCount][7] = Y1 * width + X1;                                                  // мировая координата
-                            objectsInFrame[objCount][8] = Tiles[j + y, i + x, 10 + z * 6];                                  // номер
-                        }
-                    }
-                }
-            }
-
-            if (moving)
-            {
-                objectsInFrame.Add(new int[9]);
-                int objCount = objectsInFrame.Count - 1;
-                obgSort.Add(objCount);
-                objectsInFrame[objCount][0] = buffObjectCopy[3];
-                objectsInFrame[objCount][1] = 0;
-                objectsInFrame[objCount][2] = 0;
-                objectsInFrame[objCount][3] = 0;
-                objectsInFrame[objCount][4] = buffObjectCopy[6];
-                objectsInFrame[objCount][5] = buffObjectCopy[7];
-                objectsInFrame[objCount][6] = buffObjectCopy[2];
-                int Y1 = objectsInFrame[objCount][5] + objectsInfo[objectsInFrame[objCount][0]].touchPointY;
-                int X1 = objectsInFrame[objCount][4] + objectsInfo[objectsInFrame[objCount][0]].touchPointX;
-                objectsInFrame[objCount][7] = Y1 * width + X1;
-                objectsInFrame[objCount][8] = 0;
-            }
-
-            objectsInFrame.Sort((b1, b2) => Sort(b1[7], b2[7]));
-        }
-
-        private static int Sort(int a, int b)
-        {
-            if (a < b) return -1;
-            else if (a > b) return 1;
-            else if (a == 0) return 0;
-            else return 0;
-        }
-
-        public int GetObjectCount()
-        {
-            return objectsInFrame.Count;
-        }
-
-        public int[] GetObjectInFrame(int num)
-        {
-            return num < objectsInFrame.Count
-                ? objectsInFrame[num]
-                : objectsInFrame[0];
-        }
-
-        public string GetObjectPath(int n)
-        {
-            return n < objectsInFrame.Count
-                ? "objects/" + objectsInFrame[n][0].ToString().PadLeft(6, '0')
-                : "objects/001097";
-        }
-
-        public int GetObjectName(int n)
-        {
-            return n < objectsInFrame.Count
-                ? objectsInFrame[n][0]
-                : 0;
-        }
-
-        public Vector2 GetObjectPosition(int n)
-        {
-            return n < objectsInFrame.Count
-                ? new Vector2(objectsInFrame[n][4], objectsInFrame[n][5] - objectsInFrame[n][6])
-                : new Vector2(0, 0);
         }
 
         public string[] GetTexturePalette(int textures)
@@ -376,6 +265,124 @@ namespace DivDivEditor.GameObjects
             }
         }
 
+#if OBJECTS
+        private bool objectCopy;
+        private int cursorOffsetX;
+        private int cursorOffsetY;
+        private string ObjectsFile;
+
+        public List<int[]> Objects { get; private set; } = new();                                // [25] Основной массив объектов 
+        private List<int[]> objectsInFrame = new();                         // [9] Имя, плитка по X, плитка по Y, номер на плитке, положение по X, положение по Y, высота, мировая координата, номер 
+        private List<int> obgSort = new();                                  // Сортировка объектов 
+        private static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264];  // Массив объектов класса ObjectsInfo с описанием объектов
+        private int[] buffObjectCopy = new int[35];                         //Буфферный массив для копирования или перемещения объекта
+
+        public void SetObject(int n, int[] obj)
+        {
+            Objects[n] = obj;
+        }
+
+        public int[] GetObject(int num)
+        {
+            return num < Objects.Count
+                ? Objects[num]
+                : Objects[0];
+        }
+
+        public void UpdateDisplayedObjects(int x, int y, int width, int height, bool moving)
+        {
+            objectsInFrame.Clear();
+            obgSort.Clear();
+
+            for (int i = -5; i < width / 64; i++)
+            {
+                for (int j = -5; j < height / 64 + 1; j++)
+                {
+                    if (j + y >= 0 && i + x >= 0)
+                    {
+                        for (int z = 0; z < Tiles[j + y, i + x, 5]; z++)
+                        {
+                            objectsInFrame.Add(new int[9]);
+                            int objCount = objectsInFrame.Count - 1;
+                            obgSort.Add(objCount);
+                            objectsInFrame[objCount][0] = Tiles[j + y, i + x, 9 + z * 6];                                   // Имя
+                            objectsInFrame[objCount][1] = i + x;                                                            // плитка по X
+                            objectsInFrame[objCount][2] = j + y;                                                            // плитка по Y
+                            objectsInFrame[objCount][3] = z;                                                                // номер на плитке
+                            objectsInFrame[objCount][4] = i * 64 + Tiles[j + y, i + x, 6 + z * 6];                          // положение по X
+                            objectsInFrame[objCount][5] = j * 64 + Tiles[j + y, i + x, 7 + z * 6];                          // положение по Y
+                            objectsInFrame[objCount][6] = Tiles[j + y, i + x, 8 + z * 6];                                   // высота
+                            int Y1 = objectsInFrame[objCount][5] + objectsInfo[objectsInFrame[objCount][0]].touchPointY;
+                            int X1 = objectsInFrame[objCount][4] + objectsInfo[objectsInFrame[objCount][0]].touchPointX;
+                            objectsInFrame[objCount][7] = Y1 * width + X1;                                                  // мировая координата
+                            objectsInFrame[objCount][8] = Tiles[j + y, i + x, 10 + z * 6];                                  // номер
+                        }
+                    }
+                }
+            }
+
+            if (moving)
+            {
+                objectsInFrame.Add(new int[9]);
+                int objCount = objectsInFrame.Count - 1;
+                obgSort.Add(objCount);
+                objectsInFrame[objCount][0] = buffObjectCopy[3];
+                objectsInFrame[objCount][1] = 0;
+                objectsInFrame[objCount][2] = 0;
+                objectsInFrame[objCount][3] = 0;
+                objectsInFrame[objCount][4] = buffObjectCopy[6];
+                objectsInFrame[objCount][5] = buffObjectCopy[7];
+                objectsInFrame[objCount][6] = buffObjectCopy[2];
+                int Y1 = objectsInFrame[objCount][5] + objectsInfo[objectsInFrame[objCount][0]].touchPointY;
+                int X1 = objectsInFrame[objCount][4] + objectsInfo[objectsInFrame[objCount][0]].touchPointX;
+                objectsInFrame[objCount][7] = Y1 * width + X1;
+                objectsInFrame[objCount][8] = 0;
+            }
+
+            objectsInFrame.Sort((b1, b2) => Sort(b1[7], b2[7]));
+        }
+
+        private static int Sort(int a, int b)
+        {
+            if (a < b) return -1;
+            else if (a > b) return 1;
+            else if (a == 0) return 0;
+            else return 0;
+        }
+
+        public int GetObjectCount()
+        {
+            return objectsInFrame.Count;
+        }
+
+        public int[] GetObjectInFrame(int num)
+        {
+            return num < objectsInFrame.Count
+                ? objectsInFrame[num]
+                : objectsInFrame[0];
+        }
+
+        public string GetObjectPath(int n)
+        {
+            return n < objectsInFrame.Count
+                ? "objects/" + objectsInFrame[n][0].ToString().PadLeft(6, '0')
+                : "objects/001097";
+        }
+
+        public int GetObjectName(int n)
+        {
+            return n < objectsInFrame.Count
+                ? objectsInFrame[n][0]
+                : 0;
+        }
+
+        public Vector2 GetObjectPosition(int n)
+        {
+            return n < objectsInFrame.Count
+                ? new Vector2(objectsInFrame[n][4], objectsInFrame[n][5] - objectsInFrame[n][6])
+                : new Vector2(0, 0);
+        }
+
         public int ObjectDel(int selectedObject)
         {
             int x = objectsInFrame[selectedObject][1];
@@ -534,5 +541,6 @@ namespace DivDivEditor.GameObjects
             if (direction && Tiles[objectsInFrame[selObj][2], objectsInFrame[selObj][1], 8 + objectsInFrame[selObj][3] * 6] < 255) Tiles[objectsInFrame[selObj][2], objectsInFrame[selObj][1], 8 + objectsInFrame[selObj][3] * 6]++;
             if (!direction && Tiles[objectsInFrame[selObj][2], objectsInFrame[selObj][1], 8 + objectsInFrame[selObj][3] * 6] > 0) Tiles[objectsInFrame[selObj][2], objectsInFrame[selObj][1], 8 + objectsInFrame[selObj][3] * 6]--;
         }
+#endif
     }
 }

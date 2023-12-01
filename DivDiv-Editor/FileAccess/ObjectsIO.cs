@@ -9,6 +9,23 @@ namespace DivDivEditor.FileAccess
     {
         private static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264]; //Массив объектов класса ObjectsInfo с описанием объектов
 
+        public static List<Placeable> ReadPlaceables(string inputFile)
+        {
+            FileInfo fileInfo = new(inputFile);
+            var objectsCount = (int)(fileInfo.Length / 28);
+            List<Placeable> objects = new(objectsCount);
+
+            using BinaryReader reader = new(File.Open(inputFile, FileMode.Open));
+
+            for (int i = 0; i < objectsCount; i++)
+            {
+                var obj = new Placeable(reader);
+                objects.Add(obj);
+            }
+
+            return objects;
+        }
+
         public static int ReadObjectsCount(string inputFile)
         {
             long objCount = 0;
@@ -44,35 +61,6 @@ namespace DivDivEditor.FileAccess
                     objects[i, 22] = obj.ReadByte();
                     objects[i, 23] = obj.ReadByte();
                     objects[i, 24] = obj.ReadUInt16();
-                }
-            }
-
-            return objects;
-        }
-
-        public static List<int[]> ReadObjects2(string inputFile)
-        {
-            List<int[]> objects = new();
-
-            if (File.Exists(inputFile))
-            {
-                FileInfo fileInfo = new(inputFile);
-                long objCount = fileInfo.Length / 28;
-
-                using BinaryReader obj = new(File.Open(inputFile, FileMode.Open));
-
-                for (long i = 0; i < objCount; i++)
-                {
-                    objects.Add(new int[25]);
-                    for (int j = 0; j < 20; j++)
-                    {
-                        objects[(int)i][j] = obj.ReadByte();
-                    }
-                    objects[(int)i][20] = obj.ReadUInt16();
-                    objects[(int)i][21] = obj.ReadUInt16();
-                    objects[(int)i][22] = obj.ReadByte();
-                    objects[(int)i][23] = obj.ReadByte();
-                    objects[(int)i][24] = obj.ReadUInt16();
                 }
             }
 

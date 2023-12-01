@@ -1,6 +1,7 @@
 ﻿#define OBJECTS
 
 using System.Collections.Generic;
+using System.Linq;
 using DivDivEditor.FileAccess;
 using Vector2 = Microsoft.Xna.Framework.Vector2;
 
@@ -8,25 +9,37 @@ namespace DivDivEditor.GameObjects
 {
     public class GameData
     {
-        private string WorldFile;
         private List<Terrain> terrain = new();
 
         public int[,,] Tiles { get; private set; }
         public Tile[,] TilesNew { get; private set; }
 
+#if OBJECTS
+        public List<int[]> Objects { get; private set; }
+        public List<Placeable> ObjectsNew { get; private set; }
+
+        private bool objectCopy;
+        private int cursorOffsetX;
+        private int cursorOffsetY;
+        private List<int[]> objectsInFrame = new();                         // [9] Имя, плитка по X, плитка по Y, номер на плитке, положение по X, положение по Y, высота, мировая координата, номер 
+        private List<int> obgSort = new();                                  // Сортировка объектов 
+        private static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264];  // Массив объектов класса ObjectsInfo с описанием объектов
+        private int[] buffObjectCopy = new int[35];                         //Буфферный массив для копирования или перемещения объекта
+#endif
+
         public void Initialize(string worldFile, string objectsFile)
         {
-            WorldFile = worldFile;
-
-            var map = WorldIO.ReadWorldMap(WorldFile);
+            var map = WorldIO.ReadWorldMap(worldFile);
 
             TilesNew = map.Tiles;
             Tiles = map.ToOldTilesArray();
 
             terrain = TerrainIO.ReadTerrain(@"editor.dat");
+
 #if OBJECTS
-            ObjectsFile = objectsFile;
-            Objects = ObjectsIO.ReadObjects2(ObjectsFile);
+            ObjectsNew = ObjectsIO.ReadPlaceables(objectsFile);
+            Objects = ObjectsNew.Select(x => x.ToOldArray()).ToList();
+
             objectsInfo = ObjectsIO.ReadObjectsInfo(@"objects.de");
 #endif
         }
@@ -263,17 +276,6 @@ namespace DivDivEditor.GameObjects
         }
 
 #if OBJECTS
-        private bool objectCopy;
-        private int cursorOffsetX;
-        private int cursorOffsetY;
-        private string ObjectsFile;
-
-        public List<int[]> Objects { get; private set; } = new();           // [25] Основной массив объектов 
-        private List<int[]> objectsInFrame = new();                         // [9] Имя, плитка по X, плитка по Y, номер на плитке, положение по X, положение по Y, высота, мировая координата, номер 
-        private List<int> obgSort = new();                                  // Сортировка объектов 
-        private static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264];  // Массив объектов класса ObjectsInfo с описанием объектов
-        private int[] buffObjectCopy = new int[35];                         //Буфферный массив для копирования или перемещения объекта
-
         public void SetObject(int n, int[] obj)
         {
             Objects[n] = obj;

@@ -5,6 +5,7 @@
         public const int WorldWidth = 512;
         public const int WorldHeight = 1024;
 
+        public const int TileSize = 64;
         public const int TileBytesPerHash = 2;
         public const int RowHashBytes = WorldWidth * TileBytesPerHash;
         public const int TileMaxObjects = 14;

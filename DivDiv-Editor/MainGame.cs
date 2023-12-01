@@ -40,15 +40,13 @@ namespace DivDivEditor
         Texture2D[,] TilesGreedHalf = new Texture2D[60, 34];
         Texture2D exampleTexture_0, exampleTexture_1, exampleTexture_2, exampleTexture_3;
         SpriteFont textBlock;
+
         // ----Таймеры для кнопок------
         long timer_1 = 0;
         long timer_2 = 0;
         long timer_3 = 0;
         long timer_4 = 0;
 
-        // ------Пути к файлам---------
-        string Editor = @"editor.dat";
-        string objectsIhfoFile = @"objects.de";
         //-----------------------------
         readonly GameData GD = new();
         static ObjectsInfo[] objectsInfo = new ObjectsInfo[11264]; //Массив объектов класса ObjectsInfo с описанием объектов
@@ -103,11 +101,11 @@ namespace DivDivEditor
         protected override void Initialize()
         {
             GD.Initialize(Settings.WorldFile, Settings.ObjectsFile);
-            objectsInfo = ObjectsIO.ReadObjectsInfo(objectsIhfoFile);
+            objectsInfo = ObjectsIO.ReadObjectsInfo(Settings.ObjectsInfoFile);
             encounters = EncountersIO.ReadEncounters(Settings.DataFile);
             widths = new ushort[] { 768, 1024, 1152, 1280, 1600, 1920 }; //Массив выбора разрешений экрана
             heights = new ushort[] { 576, 768, 832, 704, 896, 1088 }; //Массив выбора разрешений экрана
-            metobj = TerrainIO.ReadMetaobject(Editor);
+            metobj = TerrainIO.ReadMetaobject(Settings.EditorFile);
             MenuPointerUp = Content.Load<Texture2D>("images/000022");
             MenuPointerDown = Content.Load<Texture2D>("images/000034");
             MenuLine = Content.Load<Texture2D>("images/000087");
@@ -129,7 +127,7 @@ namespace DivDivEditor
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             textBlock = Content.Load<SpriteFont>("text");
-            update_tile_and_objects();
+            UpdateTilesAndObjects();
 
             button.Add(new Button(16, Window.ClientBounds.Height - 246, true, MenuPointerDown, "")); // Скрыть консоль
             button.Add(new Button(16, Window.ClientBounds.Height - 30, false, MenuPointerUp, "")); // Показать консоль
@@ -145,7 +143,7 @@ namespace DivDivEditor
             if (IAmActive)
             {
                 KeyboardAndMouseHandler();
-                update_tile_and_objects();
+                UpdateTilesAndObjects();
                 base.Update(gameTime);
             }
         }
@@ -180,11 +178,11 @@ namespace DivDivEditor
             base.Draw(gameTime);
         }
 
-        public void update_tile_and_objects()// Обновляем отображаемые плитки и объекты
+        public void UpdateTilesAndObjects()
         {
-            for (int i = 0; i < Window.ClientBounds.Width / 64; i++)
+            for (int i = 0; i < Window.ClientBounds.Width / Vars.TileSize; i++)
             {
-                for (int j = 0; j < Window.ClientBounds.Height / 64 + 1; j++)
+                for (int j = 0; j < Window.ClientBounds.Height / Vars.TileSize + 1; j++)
                 {
                     var x = i + xCor;
                     var y = j + yCor;
@@ -330,8 +328,8 @@ namespace DivDivEditor
             //Редактировать плитку ПКМ
             if (mouseRBState && showTexturesFrame && !objectWork && !showEncounters && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
-                int x = xCor + currentMouseState.X / 64;
-                int y = yCor + currentMouseState.Y / 64;
+                int x = xCor + currentMouseState.X / Vars.TileSize;
+                int y = yCor + currentMouseState.Y / Vars.TileSize;
                 if (x >= 0 && x < 512 && y >= 0 && y < 1024)
                 {
                     int[] tile = GD.GetTile(x, y);
@@ -384,8 +382,8 @@ namespace DivDivEditor
             //Инфо о плитке
             if (mouseLBState && !showTexturesFrame && !objectWork && !showEncounters && Stopwatch.GetTimestamp() - timer_4 > 2000000)
             {
-                int x = xCor + currentMouseState.X / 64;
-                int y = yCor + currentMouseState.Y / 64;
+                int x = xCor + currentMouseState.X / Vars.TileSize;
+                int y = yCor + currentMouseState.Y / Vars.TileSize;
                 if (x >= 0 && x < 512 && y >= 0 && y < 1024)
                 {
                     int[] tile = GD.GetTile(x, y);
@@ -618,9 +616,9 @@ namespace DivDivEditor
                     fullScreen = false;
                     _graphics.IsFullScreen = fullScreen;
                     ChangeResolution(i);
-                    if (xCor > 511 - Window.ClientBounds.Width / 64) xCor = 511 - Window.ClientBounds.Width / 64;
-                    if (yCor > 1023 - Window.ClientBounds.Height / 64) yCor = 1023 - Window.ClientBounds.Height / 64;
-                    update_tile_and_objects();
+                    if (xCor > 511 - Window.ClientBounds.Width / Vars.TileSize) xCor = 511 - Window.ClientBounds.Width / 64;
+                    if (yCor > 1023 - Window.ClientBounds.Height / Vars.TileSize) yCor = 1023 - Window.ClientBounds.Height / 64;
+                    UpdateTilesAndObjects();
                     selectedObject = -1;
                 }
             }
@@ -759,9 +757,9 @@ namespace DivDivEditor
 
         public void RenderTextures()
         {
-            for (int i = 0; i < Window.ClientBounds.Width / 64; i++)
+            for (int i = 0; i < Window.ClientBounds.Width / Vars.TileSize; i++)
             {
-                for (int j = 0; j < Window.ClientBounds.Height / 64 + 1; j++)
+                for (int j = 0; j < Window.ClientBounds.Height / Vars.TileSize + 1; j++)
                 {
                     Color color;
                     int effect = GD.GetTileEffect(i + xCor, j + yCor);
@@ -783,8 +781,8 @@ namespace DivDivEditor
                         color = Color.White;
                     }
 
-                    _spriteBatch.Draw(TilesGreedFull[i, j], new Vector2(i * 64, j * 64), color);
-                    _spriteBatch.Draw(TilesGreedHalf[i, j], new Vector2(i * 64, j * 64), color);
+                    _spriteBatch.Draw(TilesGreedFull[i, j], new Vector2(i * Vars.TileSize, j * Vars.TileSize), color);
+                    _spriteBatch.Draw(TilesGreedHalf[i, j], new Vector2(i * Vars.TileSize, j * Vars.TileSize), color);
                 }
             }
         }
@@ -901,13 +899,15 @@ namespace DivDivEditor
 
 
 #if OBJECTS
-        // Выводим объекты
         public void RenderObjects()
         {
             for (int i = 0; i < GD.GetObjectCount(); i++)
             {
-                if (i == selectedObject) _spriteBatch.Draw(Content.Load<Texture2D>(GD.GetObjectPath(i)), GD.GetObjectPosition(i), Color.Yellow);
-                else _spriteBatch.Draw(Content.Load<Texture2D>(GD.GetObjectPath(i)), GD.GetObjectPosition(i), Color.White);
+                var color = (i == selectedObject)
+                    ? Color.Yellow
+                    : Color.White;
+
+                _spriteBatch.Draw(Content.Load<Texture2D>(GD.GetObjectPath(i)), GD.GetObjectPosition(i), color);
             }
         }
 

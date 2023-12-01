@@ -11,6 +11,8 @@
         public const string WorldFile = $@"{GameStartupDirectory}\world.x0";
         public const string ObjectsFile = $@"{GameStartupDirectory}\objects.x0";
         public const string DataFile = $@"{GameStartupDirectory}\data.000";
+        public const string ObjectsInfoFile = "objects.de";
+        public const string EditorFile = @"editor.dat";
 
         public const string FilesLogDirectory = @"C:\prging\DivDiv-Editor\FileLogs";
 

@@ -34,7 +34,7 @@ namespace DivDivEditor.GameObjects
             TilesNew = map.Tiles;
             Tiles = map.ToOldTilesArray();
 
-            terrain = TerrainIO.ReadTerrain(@"editor.dat");
+            terrain = TerrainIO.ReadTerrain(Settings.EditorFile);
 
 #if OBJECTS
             ObjectsNew = ObjectsIO.ReadPlaceables(objectsFile);
@@ -105,8 +105,8 @@ namespace DivDivEditor.GameObjects
         public void TextureMapping(int textures, int MouseStateX, int MouseStateY, int xCor, int yCor, bool KeyLeftShift, bool KeyLeftControl)
         {
             int quarter = 0;
-            int y = MouseStateY / 64 + yCor;
-            int x = MouseStateX / 64 + xCor;
+            int y = MouseStateY / Vars.TileSize + yCor;
+            int x = MouseStateX / Vars.TileSize + xCor;
             int[,] tilesNew = new int[3, 3];
             int[,] tileFilling = new int[3, 3];
 
@@ -293,9 +293,9 @@ namespace DivDivEditor.GameObjects
             objectsInFrame.Clear();
             obgSort.Clear();
 
-            for (int i = -5; i < width / 64; i++)
+            for (int i = -5; i < width / Vars.TileSize; i++)
             {
-                for (int j = -5; j < height / 64 + 1; j++)
+                for (int j = -5; j < height / Vars.TileSize + 1; j++)
                 {
                     if (j + y >= 0 && i + x >= 0)
                     {

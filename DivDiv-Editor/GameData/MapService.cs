@@ -7,7 +7,7 @@ using Vector2 = Microsoft.Xna.Framework.Vector2;
 
 namespace DivDivEditor.GameObjects
 {
-    public class GameData
+    public class MapService
     {
         private List<Terrain> terrain = new();
 
